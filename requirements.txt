@@ -1,0 +1,7 @@
+fastapi[all]
+fastapi-restful[all]
+motor
+beanie
+python-dotenv
+uvicorn
+pydantic
