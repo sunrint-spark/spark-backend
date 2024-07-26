@@ -5,3 +5,5 @@ beanie
 python-dotenv
 uvicorn
 pydantic
+redis
+passlib
