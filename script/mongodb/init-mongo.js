@@ -4,3 +4,4 @@ db.createUser({
   pwd: 'password',
   roles: [{ role: 'readWrite', db: 'spark' }]
 });
+db.mycollection.insert({ name: 'sample' });
