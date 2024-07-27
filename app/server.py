@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 
 from fastapi import FastAPI
-from router import home
+from router import home, user
 from utils.log import Logger
 
 logger = Logger.create(__name__, level=logging.DEBUG)
@@ -18,7 +18,10 @@ async def lifespan(_server: FastAPI):
     motor_client = AsyncIOMotorClient(os.getenv("MONGODB_URI"))
     await init_beanie(
         database=motor_client[os.getenv("MONGODB_DATABASE")],
-        document_models=["entity.test.Test"],
+        document_models=[
+            "entity.test.Test",
+            "entity.user.User",
+        ],
     )
     logger.info("Connected to MongoDB")
     yield
@@ -33,6 +36,7 @@ app = FastAPI(
 
 
 app.include_router(home.router)
+app.include_router(user.router)
 
 
 @app.get("/")
