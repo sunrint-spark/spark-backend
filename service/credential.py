@@ -85,7 +85,7 @@ async def get_current_user(
         raise credentials_exception
     if not await credential.is_valid_token(token=session_token):
         raise credentials_exception
-    odm_user = await ODMUser.get(user_document_id)
+    odm_user = await ODMUser.get(document_id=user_document_id)
     if odm_user is None:
         raise credentials_exception
     return odm_user
