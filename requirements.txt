@@ -7,3 +7,5 @@ uvicorn
 pydantic
 redis
 passlib
+PyJWT
+aiogoogle
