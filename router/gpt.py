@@ -6,13 +6,13 @@ import os
 router = APIRouter()
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-engine_name = "ft:gpt-3.5-turbo-0125:personal::9qDv3x9y"
+model_name = "ft:gpt-3.5-turbo-0125:personal::9rGlkk8Q"
 @cbv(router)
 class GPT:
     @router.post("/gpt")
     async def gpt(self, prompt: str):
         completion = openai.chat.completions.create(
-            model=engine_name,
+            model=model_name,
             messages=[
                 {"role": "user", "content": prompt}
             ]

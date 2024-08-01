@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 
 from fastapi import FastAPI
-from router import home, user
+from router import home, user, gpt
 from utils.log import Logger
 
 logger = Logger.create(__name__, level=logging.DEBUG)
@@ -37,6 +37,7 @@ app = FastAPI(
 
 app.include_router(home.router)
 app.include_router(user.router)
+app.include_router(gpt.router)
 
 
 @app.get("/")
