@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
-
+from entity.models import Flow
+from router import flow
 from fastapi import FastAPI
 from router import home, user
 from utils.log import Logger
@@ -21,10 +22,14 @@ async def lifespan(_server: FastAPI):
         document_models=[
             "entity.test.Test",
             "entity.user.User",
+            Flow
         ],
     )
     logger.info("Connected to MongoDB")
+    _server.state.motor_client = motor_client  # MongoDB 클라이언트를 상태에 저장
     yield
+    motor_client.close()
+    logger.info("Disconnected from MongoDB")
 
 
 app = FastAPI(
@@ -37,7 +42,7 @@ app = FastAPI(
 
 app.include_router(home.router)
 app.include_router(user.router)
-
+app.include_router(flow.router)
 
 @app.get("/")
 async def root():
