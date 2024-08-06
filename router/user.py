@@ -24,6 +24,7 @@ GOOGLE_CLIENT_CREDS = aiogoogle_auth.creds.ClientCreds(
     redirect_uri="http://localhost:5173/callback",
 )
 GOOGLE_STATE = os.urandom(10).hex()
+print(GOOGLE_STATE)
 
 
 @cbv(router)
@@ -107,9 +108,8 @@ class User:
     async def logout(
         self,
         request: Request,
-        current_user_method: "ODMUser" = Depends(get_current_user),
+        _current_user: "ODMUser" = Depends(get_current_user),
     ):
-        _current_user = await current_user_method
         token = request.headers["Authorization"].split(" ")[1]
         await self.credential.delete_token(token=token)
         return {
@@ -120,9 +120,8 @@ class User:
     @router.get("/@me", description="프로필 조회")
     async def get_profile(
         self,
-        current_user_method: "ODMUser" = Depends(get_current_user),
+        current_user: "ODMUser" = Depends(get_current_user),
     ):
-        current_user = await current_user_method
         return {
             "message": "Profile found",
             "data": {
