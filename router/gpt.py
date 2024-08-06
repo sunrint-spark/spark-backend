@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi_restful.cbv import cbv
 import openai
 import os
 import httpx
+import json
 
 router = APIRouter()
 
@@ -55,7 +56,7 @@ system_message = """만약 어떤 단어나 문장 뒤에 키워드 라는 말�
                                     ],
                                     "status": "start"
                                 }
-                                
+
                                 또 만약 어떤 단어나 문장 뒤에 마무리 혹은 까지 라는 말이 있으면 그 말의 키워드를 3~4개를  keyword:"" json 형태로 출력하고 그 말을 설명한 문장을 description:""에 저장하고 
                                 "status":"end"로 출력해야해 또한 마지막에 가장 최근인 status:start인 것부터 지금까지의 대화를 간단한 문장으로 정리해 image_keyword에 저장해야해 예를들면  
                                 {
@@ -68,6 +69,7 @@ system_message = """만약 어떤 단어나 문장 뒤에 키워드 라는 말�
                                     ],
                                     "status": "end"
                                     "image_keyword": 자율주행 기술
+                                    "image_urls": None
                                 } 
                                 """
 
@@ -91,12 +93,11 @@ async def search_google_images(query, num_results=10):
         return image_urls
 
 
-
 @cbv(router)
 class GPT:
     @router.post("/gpt")
     async def gpt(self, prompt: str):
-        completion = openai.chat.completions.create(
+        completion = openai.ChatCompletion.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[
                 {
@@ -113,17 +114,15 @@ class GPT:
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
-
-
-            response_format={"type": "json_object"}
+            response_format="json"
         )
         response = completion.choices[0].message.content
+        response = json.loads(response)  # Ensure the response is parsed as JSON
         image_query = response.get("image_keyword")
-        if image_query != None:
-            image_urls = search_google_images(image_query)
+        if image_query:
+            image_urls = await search_google_images(image_query)
             response["image_urls"] = image_urls
 
-
         print(f'input: {prompt}')
-        print(completion.choices[0].message.content)
-        return completion.choices[0].message.content
+        print(json.dumps(response, indent=4, ensure_ascii=False))
+        return response
