@@ -10,3 +10,4 @@ passlib
 PyJWT
 aiogoogle
 openai
+aiohttp

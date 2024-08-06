@@ -3,9 +3,7 @@ from fastapi_restful.cbv import cbv
 import openai
 import os
 import json
-import requests
-
-
+import aiohttp
 
 router = APIRouter()
 
@@ -13,7 +11,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 google_api_key = os.getenv("GOOGLE_API_KEY")
 google_search_engine_id = os.getenv("GOOGLE_SEARCH_ENGINE_ID")
 engine_name = "gpt-4o-mini-2024-07-18"
-
 
 system_message = """만약 어떤 단어나 문장 뒤에 키워드 라는 말이 있으면 그 말의 키워드를 3~4개를 keyword:"" json형식으로 출력하고 "status":select"로 출력해야해 예를 들면
                                 자율주행차 키워드를 입력헀을때
@@ -76,8 +73,7 @@ system_message = """만약 어떤 단어나 문장 뒤에 키워드 라는 말�
                                 } 
                                 """
 
-
-def search_google_images(api_key, search_engine_id, query, num_results=3):
+async def search_google_images(api_key, search_engine_id, query, num_results=3):
     search_url = "https://www.googleapis.com/customsearch/v1"
     search_params = {
         "key": api_key,
@@ -87,12 +83,12 @@ def search_google_images(api_key, search_engine_id, query, num_results=3):
         "num": num_results,
     }
 
-    response = requests.get(search_url, params=search_params)
-    results = response.json()
-
-    image_urls = []
-    for item in results.get("items", []):
-        image_urls.append(item.get("link"))
+    async with aiohttp.ClientSession() as session:
+        async with session.get(search_url, params=search_params) as response:
+            if response.status != 200:
+                response.raise_for_status()
+            results = await response.json()
+            image_urls = [item.get("link") for item in results.get("items", [])]
 
     return image_urls
 
@@ -122,13 +118,11 @@ class GPT:
         response = json.loads(completion.choices[0].message.content)
         image_query = response.get("image_keyword")
 
-
         if image_query:
             print("이미지 검색중!")
-            image_query = search_google_images(google_api_key, google_search_engine_id, image_query)
-            response["image_urls"] = image_query
+            image_urls = await search_google_images(google_api_key, google_search_engine_id, image_query)
+            response["image_urls"] = image_urls
             print("이미지 검색 완료!")
-
 
         print(f'image_query: {image_query}')
         print(f'input: {prompt}')
