@@ -12,7 +12,7 @@ from entity.user import User as ODMUser
 from aiogoogle import Aiogoogle, auth as aiogoogle_auth
 
 from service.credential import depends_credential, Credential, get_current_user
-from service.session import Session, get_active_session
+from service.session import Session
 
 load_dotenv(verbose=True)
 router = APIRouter(prefix="/user", tags=["user"])
