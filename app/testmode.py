@@ -3,7 +3,6 @@ import logging
 from dotenv import load_dotenv
 from utils.log import Logger
 from entity.user import User as ODMUser
-from service.credential import Credential
 
 logger = Logger.create(__name__, level=logging.DEBUG)
 load_dotenv()
