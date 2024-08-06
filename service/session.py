@@ -3,7 +3,7 @@ import json
 from service.credential import get_redis_pool
 from datetime import timedelta
 
-from fastapi import HTTPException, status, Security, Depends
+from fastapi import HTTPException, status, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 security = HTTPBearer(

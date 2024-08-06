@@ -93,6 +93,7 @@ class User:
             await session.set_expire(access_token_expires)
             await session.update({})
 
+
             return {
                 "message": "Login Success",
                 "token": access_token,
