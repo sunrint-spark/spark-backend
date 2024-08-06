@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
-from entity.models import Flow
-from router import flow
 from fastapi import FastAPI
 from router import home, user
 from utils.log import Logger
@@ -22,7 +20,7 @@ async def lifespan(_server: FastAPI):
         document_models=[
             "entity.test.Test",
             "entity.user.User",
-            Flow
+            "entity.flow.Flow",
         ],
     )
     logger.info("Connected to MongoDB")
@@ -42,7 +40,7 @@ app = FastAPI(
 
 app.include_router(home.router)
 app.include_router(user.router)
-app.include_router(flow.router)
+# app.include_router(flow.router)
 
 @app.get("/")
 async def root():
