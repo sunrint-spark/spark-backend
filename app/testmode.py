@@ -7,7 +7,7 @@ from entity.user import User as ODMUser
 logger = Logger.create(__name__, level=logging.DEBUG)
 load_dotenv()
 
-if os.getenv("TESTMODE") == "true":
+if os.getenv("TEST_MODE") == "true":
     logger.info("Test Mode On")
     TEST_USER_ACCESS_TOKEN = "eySPARKTESTAAAAAA" + os.urandom(6).hex() + "BK00000000007218"
     SPARK_TEST_USER_PROFILE = ("https://lh3.googleusercontent.com/a"
