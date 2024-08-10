@@ -1,59 +1,39 @@
 from fastapi import APIRouter
 from fastapi_restful.cbv import cbv
-import openai
+from openai import OpenAI
 import os
-import json
+# import json
 import aiohttp
 
 router = APIRouter()
+client = OpenAI()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OpenAI.api_key = os.getenv("OPENAI_API_KEY")
 google_api_key = os.getenv("GOOGLE_API_KEY")
 google_search_engine_id = os.getenv("GOOGLE_SEARCH_ENGINE_ID")
 engine_name = "gpt-4o-mini-2024-07-18"
 
-system_message = """만약 어떤 단어나 문장 뒤에 생성과 비슷한 의미의 시작 단어가 있으면 그 말의 키워드를 3~4를 keyword:"" json 형식으로 출력하고 "status":"start"로 출력해야해
-                                자율주행차 시작을 입력헀을때
-                                {
-                                    "keyword": [
-                                        "자율주행 기술",
-                                        "센서 및 데이터 처리",
-                                        "교통안전",
-                                        "법규 및 정책"
-                                    ],
-                                    "status": "start"
-                                }
-                                
-                                만약 어떤 단어나 문장 뒤에 키워드 라는 말이 있으면 그 말의 키워드를 3~4개를 keyword:"" json형식으로 출력하고 "status":select"로 출력해야해 예를 들면
-                                자율주행차 키워드를 입력헀을때
-                                {
-                                    "keyword": [
-                                        "자율주행 기술",
-                                        "센서 및 데이터 처리",
-                                        "교통안전",
-                                        "법규 및 정책"
-                                    ],
-                                    "status": "select"
-                                }
-                                또 사용자가 키워드를 입력하면 그 키워드에 대해 좀 더 자세한 키워드를 3~4씩 출력해야해
-                                
-                                만약 문장 뒤에 다시 라는 말이 있으면 그 말의 키워드를 새롭게 3~4개를 keyword:"" json 형식으로 출력하고 status는 방금 전 대화의 status로 출력해야해
-                                
-                                또 만약 어떤 단어나 문장 뒤에 마무리 혹은 까지 라는 말이 있으면 그 말의 키워드를 3~4개를  keyword:"" json 형태로 출력하고 그 말을 설명한 문장을 description:""에 저장하고 
-                                "status":"end"로 출력해야해 또한 마지막에 가장 최근인 status:start인 것부터 지금까지의 대화를 간단한 문장으로 정리해 image_keyword에 저장해야해 예를들면  
-                                {
-                                    "description": "차량이 스스로 안전하게 주행할 수 있도록 하는 자율주행 기술, 이를 통해 장애물 회피, 교통 신호 인식, 주행 경로 최적화를 달성합니다."
-                                    "keyword": [
-                                        "머신러닝 알고리즘",
-                                        "컴퓨터 비전",
-                                        "경로 계획",
-                                        "센서 퓨전"
-                                    ],
-                                    "status": "end"
-                                    "image_keyword": 자율주행 기술
-                                    "image_urls": None
-                                } 
+system_message = """
+당신은 AI 아이디어 스케치북이라는 시스템입니다. 사용자가 주제를 입력하면 그에 따른 아이디어를 트리 형식으로 제시해주세요. 
+            각 단계에서 3-5개의 하위 항목을 제안하고, 사용자가 선택한 항목에 대해 더 자세한 하위 카테고리나 아이디어를 제시하세요.
+            최대 3단계까지 깊이 들어갈 수 있습니다.
+            규칙:
+                항상 트리 구조로 응답하세요 
+                각 항목은 간결하게 설명하세요.
+                사용자가 특정 항목을 선택하면 그에 대한 하위 항목을 제시하세요.
+                하위 항목을 제시할 때, 선택된 항목의 바로 1단계 아래 항목만 제시하세요.
+                3단계에 도달하면 최종 아이디어나 구체적인 제안을 제시하세요.
+                사용자의 입력에 따라 유연하게 대응하세요.
                                 """
+
+assistant = client.beta.assistants.create(
+    name="Idea_assistant",
+    instructions=system_message,
+    model=engine_name,
+)
+
+# Create a thread once and reuse it for all requests
+thread = assistant.threads.create()
 
 async def search_google_images(api_key, search_engine_id, query, num_results=3):
     search_url = "https://www.googleapis.com/customsearch/v1"
@@ -78,37 +58,19 @@ async def search_google_images(api_key, search_engine_id, query, num_results=3):
 class GPT:
     @router.post("/gpt")
     async def gpt(self, prompt: str):
-        completion = openai.chat.completions.create(
-            model=engine_name,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_message
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.7,
-            max_tokens=1000,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0,
-            # response_format={"type": "json_object"}
+        global thread
+        if thread is None:
+            thread = assistant.threads.create()
+        print(f'thread id: {thread.id}')
+        message = client.beta.threads.messages.create(
+            thread_id=thread.id,
+            role="user",
+            content=prompt
         )
 
-        response = json.loads(completion.choices[0].message.content)
-        image_query = response.get("image_keyword")
-
-        if image_query:
-            print("이미지 검색중!")
-            image_urls = await search_google_images(google_api_key, google_search_engine_id, image_query)
-            response["image_urls"] = image_urls
-            print("이미지 검색 완료!")
+        print(f'prompt: {prompt}')
+        print(f'message: {message["content"]}')
+        return message["content"]
 
 
 
-        print(f'input: {prompt}')
-        print(f'response: {response}')
-        return response
