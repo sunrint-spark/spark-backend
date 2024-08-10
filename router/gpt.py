@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from fastapi_restful.cbv import cbv
 from openai import OpenAI
 import os
-# import json
+import json
 import aiohttp
 
 router = APIRouter()
@@ -29,7 +29,7 @@ system_message = """
 사용자가 특정 항목을 선택하면 그에 대한 항목만 제시하세요.
 4단계에 도달하거나 사용자가 종료 요청을 하면 최종 아이디어나 구체적인 제안을 제시하세요.
 최종 아이디어나 구체적인 제안을 제시할때
-"uppercategories"에 사용자가 입력한 주제나, 아이디어, 카테고리를 저장하고, 최종 아이디어나 구체적인 제안을 "idea"에 리스트로 저장하고  정리할 수 있는 단어를 "image_keyword"에 저장하세요.
+"uppercategories"에 사용자가 입력한 주제나, 아이디어, 카테고리를 저장하고, 최종 아이디어나 구체적인 제안을 "idea"에 리스트로 저장하고  정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = None으로 저장하세요.
 
 사용자의 입력에 따라 유연하게 대응하세요.
                                 """
@@ -76,10 +76,15 @@ class GPT:
             content=prompt,
             #response_format={"type": "json_object"}
         )
+        answer = json.loads(message["content"])
+        if "image_keyword" in answer:
+            image_keyword = answer["image_keyword"]
+            image_urls = await search_google_images(google_api_key, google_search_engine_id, image_keyword)
+            answer["image_urls"] = image_urls
 
         print(f'prompt: {prompt}')
-        print(f'message: {message["content"]}')
-        return message["content"]
+        print(f'message: {answer}')
+        return answer
 
 
 
