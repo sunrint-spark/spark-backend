@@ -62,13 +62,17 @@ async def search_google_images(api_key, search_engine_id, query, num_results=3):
 
     return image_urls
 
-def convert2json(answer):
-    answer.replace("```", "").strip()
-    answer.replace("json", "").strip()
-    print(answer)
+async def convert2json(answer):
+    answer = answer.replace("```", "").strip()
+    answer = answer.replace("json", "").strip()
     json_answer = json.loads(answer.strip())
+    if json_answer.get("image_keyword"):
+        image_urls = await search_google_images(
+            google_api_key, google_search_engine_id, json_answer["image_keyword"]
+        )
+        json_answer["image_urls"] = image_urls
+    print(f'answer: {json_answer}')
     return json_answer
-
 def threadcheck():
     global thread
     if thread is None:
@@ -82,7 +86,7 @@ class GPT:
 
         print(f'assistant id:{assistant.id} thread id: {thread.id}')
         # 스레드에 메시지 추가
-        message = client.beta.threads.messages.create(
+        message =  client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
             content=prompt,
@@ -98,7 +102,7 @@ class GPT:
                 thread_id=thread.id
             )
 
-            json_answer = convert2json(messages.data[0].content[0].text.value)
+            json_answer = await convert2json(messages.data[0].content[0].text.value)
             return json_answer
         else:
             return {"status": run.status}
