@@ -2,8 +2,8 @@ from fastapi import APIRouter
 from fastapi_restful.cbv import cbv
 from openai import OpenAI
 import os
-import json
 import aiohttp
+import json
 
 router = APIRouter()
 client = OpenAI()
@@ -29,7 +29,7 @@ system_message = """
 사용자가 특정 항목을 선택하면 그에 대한 항목만 제시하세요.
 4단계에 도달하거나 사용자가 종료 요청을 하면 최종 아이디어나 구체적인 제안을 제시하세요.
 최종 아이디어나 구체적인 제안을 제시할때
-"uppercategories"에 사용자가 입력한 주제나, 아이디어, 카테고리를 저장하고, 최종 아이디어나 구체적인 제안을 "idea"에 리스트로 저장하고  정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = None으로 저장하세요.
+"uppercategories"에 사용자가 입력한 주제나, 아이디어, 카테고리를 저장하고, 최종 아이디어나 구체적인 제안을 "idea"에 리스트로 저장하고  정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = null으로 저장하세요.
 
 사용자의 입력에 따라 유연하게 대응하세요.
                                 """
@@ -41,7 +41,7 @@ assistant = client.beta.assistants.create(
 )
 
 # Create a thread once and reuse it for all requests
-thread = assistant.threads.create()
+thread = client.beta.threads.create()
 
 async def search_google_images(api_key, search_engine_id, query, num_results=3):
     search_url = "https://www.googleapis.com/customsearch/v1"
@@ -62,29 +62,43 @@ async def search_google_images(api_key, search_engine_id, query, num_results=3):
 
     return image_urls
 
+def convert2json(answer):
+    answer.replace("```", "").strip()
+    answer.replace("json", "").strip()
+    print(answer)
+    json_answer = json.loads(answer.strip())
+    return json_answer
+
+def threadcheck():
+    global thread
+    if thread is None:
+        thread = client.beta.threads.create()
+
 @cbv(router)
 class GPT:
     @router.post("/gpt")
     async def gpt(self, prompt: str):
-        global thread
-        if thread is None:
-            thread = assistant.threads.create()
-        print(f'thread id: {thread.id}')
+        threadcheck()
+
+        print(f'assistant id:{assistant.id} thread id: {thread.id}')
+        # 스레드에 메시지 추가
         message = client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
             content=prompt,
-            #response_format={"type": "json_object"}
         )
-        answer = json.loads(message["content"])
-        if "image_keyword" in answer:
-            image_keyword = answer["image_keyword"]
-            image_urls = await search_google_images(google_api_key, google_search_engine_id, image_keyword)
-            answer["image_urls"] = image_urls
+        # 스레드 실행
+        run = client.beta.threads.runs.create_and_poll(
+            thread_id=thread.id,
+            assistant_id=assistant.id,
+            instructions=system_message
+        )
+        if run.status == 'completed':
+            messages = client.beta.threads.messages.list(
+                thread_id=thread.id
+            )
 
-        print(f'prompt: {prompt}')
-        print(f'message: {answer}')
-        return answer
-
-
-
+            json_answer = convert2json(messages.data[0].content[0].text.value)
+            return json_answer
+        else:
+            return {"status": run.status}
