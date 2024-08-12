@@ -6,7 +6,9 @@ import aiohttp
 import json
 
 
-router = APIRouter()
+router = APIRouter(
+    tags=["GPT"],
+)
 client = OpenAI()
 
 # 환경 변수에서 API 키 로드
