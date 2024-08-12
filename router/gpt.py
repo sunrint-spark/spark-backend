@@ -4,7 +4,11 @@ from openai import OpenAI
 import os
 import aiohttp
 import json
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+from .notion_log import notionlog
 
 router = APIRouter(
     tags=["GPT"],
@@ -120,6 +124,12 @@ class GPT:
                 print(f'prompt: {prompt}')
                 json_answer = await convert2json(messages.data[0].content[0].text.value)
                 print(f'json_answer: {json_answer}')
+
+                if json_answer.get("status") == "markdown":
+                    title = json_answer.get("main_title")
+                    markdown_content = json_answer.get("markdown")
+                    print("노션에 기록중...")
+                    await notionlog(title, markdown_content)
                 return json_answer
             else:
                 raise HTTPException(status_code=500, detail=f"Thread run status: {run.status}")
