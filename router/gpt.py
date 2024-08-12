@@ -4,6 +4,7 @@ from openai import OpenAI
 import os
 import aiohttp
 import json
+from router.notion_log import notionlog
 
 
 router = APIRouter(
@@ -23,9 +24,7 @@ system_message = """
 최대한 단계를 줄이세요.
 각 항목은 간결하게 설명하세요.
 출력은 json형태로 출력하세요.
-진행 상황에 start, select, end를 "status"에 저장하세요.
-사용자가 입력한것의 상위 아이디어를 그대로 "uppercategories"에 저장하세요.
-사용자가 입력한 아이디어를 그대로 "currentcategories"에 저장하세요.
+사용자가 입력한 주제나, 아이디어, 카테고리가 "uppercategories"에 저장하세요.
 사용자가 입력한것의 하위 아이디어 를"subcategories"에 리스트로 저장하세요.
 (예{
   "uppercategories": "미니멀리즘",
@@ -33,11 +32,13 @@ system_message = """
 "가구 및 장식", "공간 활용"]
 })
 사용자가 특정 항목을 선택하면 그에 대한 항목만 제시하세요.
-1단계일때는 "uppercategories":null로 저장하고, "currentcategories"에 사용자가 입력한 그대로 저장하세요.
 4단계에 도달하거나 사용자가 종료 요청을 하면 최종 아이디어나 구체적인 제안을 제시하세요.
-최종 아이디어나 구체적인 제안을 제시할때 기존 저장형식에 추가적으로 정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = null으로 저장하세요.
+최종 아이디어나 구체적인 제안을 제시할때
+"uppercategories"에 사용자가 입력한 주제나, 아이디어, 카테고리를 저장하고, 최종 아이디어나 구체적인 제안을 "idea"에 리스트로 저장하고  정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = null으로 저장하세요.
+
 사용자의 입력에 따라 유연하게 대응하세요.
 """
+#4단계에 도달한 후 만약 마크다운으로 정리해줘라는 말을 사용자가 하면 지금까지 했던 모든 대화를 정리하여 "main_title에 단어로 저장하고, 마크다운 형식으로 트리 구조를 확인 할 수 있도록 "markdown"에 저장하세요.
 
 assistant = client.beta.assistants.create(
     name="Idea_assistant",
@@ -80,6 +81,8 @@ async def convert2json(answer):
                 google_api_key, google_search_engine_id, json_answer["image_keyword"]
             )
             json_answer["image_urls"] = image_urls
+        # if json_answer.get("markdown"):
+        #     await notionlog()
         print(f'answer: {json_answer}')
         return json_answer
     except json.JSONDecodeError:
