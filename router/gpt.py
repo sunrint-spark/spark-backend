@@ -5,6 +5,7 @@ import os
 import aiohttp
 import json
 
+
 router = APIRouter()
 client = OpenAI()
 
@@ -20,7 +21,8 @@ system_message = """
 최대한 단계를 줄이세요.
 각 항목은 간결하게 설명하세요.
 출력은 json형태로 출력하세요.
-사용자가 입력한 주제나, 아이디어, 카테고리가 "uppercategories"에 저장하세요.
+진행 상황에 start, select, end를 "status"에 저장하세요.
+사용자가 입력한것의 바로 윗 단계 상위 아이디어를 "uppercategories"에 저장하세요.
 사용자가 입력한것의 하위 아이디어 를"subcategories"에 리스트로 저장하세요.
 (예{
   "uppercategories": "미니멀리즘",
@@ -30,8 +32,7 @@ system_message = """
 사용자가 특정 항목을 선택하면 그에 대한 항목만 제시하세요.
 4단계에 도달하거나 사용자가 종료 요청을 하면 최종 아이디어나 구체적인 제안을 제시하세요.
 최종 아이디어나 구체적인 제안을 제시할때
-"uppercategories"에 사용자가 입력한 주제나, 아이디어, 카테고리를 저장하고, 최종 아이디어나 구체적인 제안을 "idea"에 리스트로 저장하고  정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = null으로 저장하세요.
-
+"uppercategories"에 사용자가 입력한것의 바로 윗 단계 상위 아이디어를 "uppercategories"에 저장하고, 최종 아이디어나 구체적인 제안을 "idea"에 리스트로 저장하고  정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = null으로 저장하세요.
 사용자의 입력에 따라 유연하게 대응하세요.
 """
 
@@ -95,7 +96,7 @@ class GPT:
         threadcheck()
 
         try:
-            print(f'assistant id:{assistant.id} thread id: {thread.id}')
+            # print(f'assistant id:{assistant.id} thread id: {thread.id}')
             # 스레드에 메시지 추가
             message = client.beta.threads.messages.create(
                 thread_id=thread.id,
@@ -113,7 +114,7 @@ class GPT:
                 messages = client.beta.threads.messages.list(
                     thread_id=thread.id
                 )
-
+                print(f'prompt: {prompt}')
                 json_answer = await convert2json(messages.data[0].content[0].text.value)
                 return json_answer
             else:
