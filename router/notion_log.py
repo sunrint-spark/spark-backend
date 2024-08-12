@@ -5,7 +5,7 @@ import os
 
 # Notion API 설정
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
-DATABASE_ID = "your_database_id_here"
+DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 
 headers = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
@@ -41,9 +41,9 @@ async def create_page(session, title, markdown_content):
             print(f"오류 발생: {response.status}")
             print(await response.text())
 
-async def main():
-    title = input("페이지 제목을 입력하세요: ")
-    markdown_content = input("마크다운 내용을 입력하세요: ")
-
-    async with aiohttp.ClientSession() as session:
-        await create_page(session, title, markdown_content)
+async def notionlog(main_title, markdown_content):
+    try:
+        async with aiohttp.ClientSession() as session:
+            await create_page(session, main_title, markdown_content)
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
