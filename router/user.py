@@ -12,7 +12,7 @@ from entity.user import User as ODMUser
 from aiogoogle import Aiogoogle, auth as aiogoogle_auth
 
 from service.credential import depends_credential, Credential, get_current_user
-from service.session import Session, get_active_session
+from service.session import Session
 
 load_dotenv(verbose=True)
 router = APIRouter(prefix="/user", tags=["user"])
@@ -24,6 +24,7 @@ GOOGLE_CLIENT_CREDS = aiogoogle_auth.creds.ClientCreds(
     redirect_uri="http://localhost:5173/callback",
 )
 GOOGLE_STATE = os.urandom(10).hex()
+print(GOOGLE_STATE)
 
 
 @cbv(router)
@@ -92,6 +93,7 @@ class User:
             await session.set_expire(access_token_expires)
             await session.update({})
 
+
             return {
                 "message": "Login Success",
                 "token": access_token,
@@ -107,9 +109,8 @@ class User:
     async def logout(
         self,
         request: Request,
-        current_user_method: "ODMUser" = Depends(get_current_user),
+        _current_user: "ODMUser" = Depends(get_current_user),
     ):
-        _current_user = await current_user_method
         token = request.headers["Authorization"].split(" ")[1]
         await self.credential.delete_token(token=token)
         return {
@@ -120,9 +121,8 @@ class User:
     @router.get("/@me", description="프로필 조회")
     async def get_profile(
         self,
-        current_user_method: "ODMUser" = Depends(get_current_user),
+        current_user: "ODMUser" = Depends(get_current_user),
     ):
-        current_user = await current_user_method
         return {
             "message": "Profile found",
             "data": {

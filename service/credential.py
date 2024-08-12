@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status, Security, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-
+from app.testmode import get_or_create_test_user, TEST_USER_ACCESS_TOKEN
 from app.redisconn import RedisConn
 from entity.user import User as ODMUser
 
@@ -74,6 +74,9 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if os.getenv("TEST_MODE") == "true":
+        if session_token == TEST_USER_ACCESS_TOKEN:
+            return await get_or_create_test_user()
     try:
         payload = jwt.decode(
             session_token, os.environ["JWT_SECRET_KEY"], algorithms=["HS256"]
