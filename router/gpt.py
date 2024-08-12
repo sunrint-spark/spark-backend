@@ -22,7 +22,8 @@ system_message = """
 각 항목은 간결하게 설명하세요.
 출력은 json형태로 출력하세요.
 진행 상황에 start, select, end를 "status"에 저장하세요.
-사용자가 입력한것의 바로 윗 단계 상위 아이디어를 "uppercategories"에 저장하세요.
+사용자가 입력한것의 상위 아이디어를 그대로 "uppercategories"에 저장하세요.
+사용자가 입력한 아이디어를 그대로 "currentcategories"에 저장하세요.
 사용자가 입력한것의 하위 아이디어 를"subcategories"에 리스트로 저장하세요.
 (예{
   "uppercategories": "미니멀리즘",
@@ -30,9 +31,9 @@ system_message = """
 "가구 및 장식", "공간 활용"]
 })
 사용자가 특정 항목을 선택하면 그에 대한 항목만 제시하세요.
+1단계일때는 "uppercategories":null로 저장하고, "currentcategories"에 사용자가 입력한 그대로 저장하세요.
 4단계에 도달하거나 사용자가 종료 요청을 하면 최종 아이디어나 구체적인 제안을 제시하세요.
-최종 아이디어나 구체적인 제안을 제시할때
-"uppercategories"에 사용자가 입력한것의 바로 윗 단계 상위 아이디어를 "uppercategories"에 저장하고, 최종 아이디어나 구체적인 제안을 "idea"에 리스트로 저장하고  정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = null으로 저장하세요.
+최종 아이디어나 구체적인 제안을 제시할때 기존 저장형식에 추가적으로 정리할 수 있는 단어를 "image_keyword"에 저장하고 "image_urls" = null으로 저장하세요.
 사용자의 입력에 따라 유연하게 대응하세요.
 """
 
