@@ -15,11 +15,7 @@ router = APIRouter(
 
 @cbv(router)
 class Node:
-    @router.get("/node")
-    async def get_node(self):
-        return {"message": "Hello Node"}
-
-    @router.post("/node", response_model=FlowNode, status_code=status.HTTP_201_CREATED)
+    @router.post("/", response_model=FlowNode, status_code=status.HTTP_201_CREATED)
     async def create_node(
         self, node: FlowNode, user: ODMUser = Depends(get_current_user),
     ):
