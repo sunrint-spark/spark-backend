@@ -1,9 +1,7 @@
 from beanie import Document
 from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
-from typing import List, Optional, Dict, Literal, NewType
-
-UserId = NewType("UserId", str)
+from typing import List, Optional, Dict, Literal
 
 
 class NodeData(BaseModel):
@@ -39,10 +37,10 @@ class FlowUserPermission(BaseModel):
 
 class Flow(Document):
     id: UUID = Field(default_factory=uuid4, alias="_id")
-    editor_option: Dict[UserId, EditorOption] = Field(default={})
+    editor_option: Dict[str, EditorOption] = Field(default={})
     nodes: List[Node] = Field(default=[])
     edges: List[Edge] = Field(default=[])
-    permission: Dict[UserId, List[FlowUserPermission]] = Field(default=[])
+    permission: Dict[str, List[FlowUserPermission]] = Field(default=[])
 
     class Settings:
         name = "flows"  # MongoDB 컬렉션 이름
