@@ -1,7 +1,14 @@
 import logging
 import time
 import redis
-from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi_restful.cbv import cbv
 from entity.flow import Node as FlowNode
 from entity.user import User as ODMUser
@@ -14,7 +21,7 @@ import json
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST"),
     port=os.getenv("REDIS_PORT"),
-    password=os.getenv("REDIS_PASSWORD")
+    password=os.getenv("REDIS_PASSWORD"),
 )
 
 logger = Logger.create(__name__, level=logging.DEBUG)
@@ -28,6 +35,7 @@ router = APIRouter(
     tags=["Node"],
 )
 
+
 @cbv(router)
 class Node:
     def __init__(self):
@@ -35,7 +43,10 @@ class Node:
 
     @router.post("/", response_model=FlowNode, status_code=status.HTTP_201_CREATED)
     async def save_node_position(
-        self, node: FlowNode, user: ODMUser = Depends(get_current_user), node_position: dict[str, int] = None
+        self,
+        node: FlowNode,
+        user: ODMUser = Depends(get_current_user),
+        node_position: dict[str, int] = None,
     ):
         try:
             node_id = str(node.id)
@@ -73,9 +84,7 @@ class Node:
                     if node_data:
                         node_dict = json.loads(node_data)
                         collection.update_one(
-                            {"_id": node_dict["id"]},
-                            {"$set": node_dict},
-                            upsert=True
+                            {"_id": node_dict["id"]}, {"$set": node_dict}, upsert=True
                         )
                         logger.info(f"Node {node_dict['id']} saved to database")
                 # Clear Redis after saving all nodes

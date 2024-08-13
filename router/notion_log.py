@@ -10,28 +10,27 @@ DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 headers = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
     "Content-Type": "application/json",
-    "Notion-Version": "2022-06-28"
+    "Notion-Version": "2022-06-28",
 }
+
 
 async def create_page(session, title, markdown_content):
     url = "https://api.notion.com/v1/pages"
 
     new_page_data = {
         "parent": {"database_id": DATABASE_ID},
-        "properties": {
-            "title": {
-                "title": [{"text": {"content": title}}]
-            }
-        },
+        "properties": {"title": {"title": [{"text": {"content": title}}]}},
         "children": [
             {
                 "object": "block",
                 "type": "paragraph",
                 "paragraph": {
-                    "rich_text": [{"type": "text", "text": {"content": markdown_content}}]
-                }
+                    "rich_text": [
+                        {"type": "text", "text": {"content": markdown_content}}
+                    ]
+                },
             }
-        ]
+        ],
     }
 
     async with session.post(url, headers=headers, json=new_page_data) as response:
@@ -40,6 +39,7 @@ async def create_page(session, title, markdown_content):
         else:
             print(f"오류 발생: {response.status}")
             print(await response.text())
+
 
 async def notionlog(main_title, markdown_content):
     try:

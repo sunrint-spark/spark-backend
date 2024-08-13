@@ -6,6 +6,7 @@ import aiohttp
 import json
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from .notion_log import notionlog
@@ -53,6 +54,7 @@ assistant = client.beta.assistants.create(
 # Create a thread once and reuse it for all requests
 thread = client.beta.threads.create()
 
+
 async def search_google_images(api_key, search_engine_id, query, num_results=3):
     search_url = "https://www.googleapis.com/customsearch/v1"
     search_params = {
@@ -67,13 +69,19 @@ async def search_google_images(api_key, search_engine_id, query, num_results=3):
         async with aiohttp.ClientSession() as session:
             async with session.get(search_url, params=search_params) as response:
                 if response.status != 200:
-                    raise HTTPException(status_code=response.status, detail=f"Google API error: {response.reason}")
+                    raise HTTPException(
+                        status_code=response.status,
+                        detail=f"Google API error: {response.reason}",
+                    )
                 results = await response.json()
                 image_urls = [item.get("link") for item in results.get("items", [])]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred while fetching images: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred while fetching images: {str(e)}"
+        )
 
     return image_urls
+
 
 async def convert2json(answer):
     try:
@@ -89,12 +97,17 @@ async def convert2json(answer):
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Failed to decode JSON response.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred during JSON conversion: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred during JSON conversion: {str(e)}",
+        )
+
 
 def threadcheck():
     global thread
     if thread is None:
         thread = client.beta.threads.create()
+
 
 @cbv(router)
 class GPT:
@@ -114,16 +127,14 @@ class GPT:
             run = client.beta.threads.runs.create_and_poll(
                 thread_id=thread.id,
                 assistant_id=assistant.id,
-                instructions=system_message
+                instructions=system_message,
             )
 
-            if run.status == 'completed':
-                messages = client.beta.threads.messages.list(
-                    thread_id=thread.id
-                )
-                print(f'prompt: {prompt}')
+            if run.status == "completed":
+                messages = client.beta.threads.messages.list(thread_id=thread.id)
+                print(f"prompt: {prompt}")
                 json_answer = await convert2json(messages.data[0].content[0].text.value)
-                print(f'json_answer: {json_answer}')
+                print(f"json_answer: {json_answer}")
 
                 if json_answer.get("status") == "markdown":
                     title = json_answer.get("main_title")
@@ -132,7 +143,9 @@ class GPT:
                     await notionlog(title, markdown_content)
                 return json_answer
             else:
-                raise HTTPException(status_code=500, detail=f"Thread run status: {run.status}")
+                raise HTTPException(
+                    status_code=500, detail=f"Thread run status: {run.status}"
+                )
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")

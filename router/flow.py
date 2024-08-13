@@ -20,7 +20,9 @@ router = APIRouter(
 class Flow:
     @router.post("/", response_model=Flow, status_code=status.HTTP_201_CREATED)
     async def create_flow(
-        self, flow: Flow, user: "ODMUser" = Depends(get_current_user),
+        self,
+        flow: Flow,
+        user: "ODMUser" = Depends(get_current_user),
     ):
         try:
             await flow.create()

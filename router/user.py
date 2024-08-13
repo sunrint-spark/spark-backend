@@ -12,7 +12,7 @@ from entity.user import User as ODMUser
 from aiogoogle import Aiogoogle, auth as aiogoogle_auth
 
 from service.credential import depends_credential, Credential, get_current_user
-from service.session import Session
+from service.usersession import UserSession as Session
 
 load_dotenv(verbose=True)
 router = APIRouter(prefix="/user", tags=["user"])
@@ -92,7 +92,6 @@ class User:
             session = Session(token=access_token)
             await session.set_expire(access_token_expires)
             await session.update({})
-
 
             return {
                 "message": "Login Success",
