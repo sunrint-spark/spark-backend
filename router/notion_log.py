@@ -24,23 +24,48 @@ def is_valid_image_url(url):
     return path.lower().endswith(valid_extensions)
 
 async def create_page_with_images(session, title, markdown_content, image_urls):
-    url = "https://api.notion.com/v1/pages"
+    url = f"https://api.notion.com/v1/pages"
 
-    # 필터링된 이미지 URL만 사용
+    # 마크다운 내용을 줄 단위로 분리
+    lines = markdown_content.split('\n')
+    children = []
+
+    for line in lines:
+        if line.startswith('#'):
+            # 제목 레벨 확인
+            level = len(line.split()[0])
+            content = line.lstrip('#').strip()
+
+            if level == 1:
+                block_type = "heading_1"
+            elif level == 2:
+                block_type = "heading_2"
+            elif level == 3:
+                block_type = "heading_3"
+            else:
+                block_type = "paragraph"
+
+            children.append({
+                "object": "block",
+                "type": block_type,
+                block_type: {
+                    "rich_text": [{"type": "text", "text": {"content": content}}]
+                }
+            })
+        else:
+            # 일반 텍스트
+            children.append({
+                "object": "block",
+                "type": "paragraph",
+                "paragraph": {
+                    "rich_text": [{"type": "text", "text": {"content": line}}]
+                }
+            })
+
+    # 필터링된 이미지 URL 리스트
     filtered_image_urls = [url for url in image_urls if is_valid_image_url(url)]
 
-    # 기본 텍스트 블록 생성
-    children_blocks = [
-        {
-            "object": "block",
-            "type": "paragraph",
-            "paragraph": {
-                "rich_text": [{"type": "text", "text": {"content": markdown_content}}]
-            }
-        }
-    ]
-
-    # 유효한 이미지 URL을 이미지 블록으로 추가
+    # 이미지 블록 추가
     for image_url in filtered_image_urls:
         image_block = {
             "object": "block",
@@ -50,6 +75,9 @@ async def create_page_with_images(session, title, markdown_content, image_urls):
                 "external": {"url": image_url}
             }
         }
+        children.append(image_block)
+
+        # 이미지 URL을 텍스트로 추가
         image_url_block = {
             "object": "block",
             "type": "paragraph",
@@ -57,20 +85,19 @@ async def create_page_with_images(session, title, markdown_content, image_urls):
                 "rich_text": [{"type": "text", "text": {"content": image_url}}]
             }
         }
-        children_blocks.append(image_block)
-        children_blocks.append(image_url_block)
+        children.append(image_url_block)
 
-    new_page_data = {
+    payload = {
         "parent": {"database_id": DATABASE_ID},
         "properties": {
             "title": {
                 "title": [{"text": {"content": title}}]
             }
         },
-        "children": children_blocks
+        "children": children
     }
 
-    async with session.post(url, headers=headers, json=new_page_data) as response:
+    async with session.post(url, headers=headers, json=payload) as response:
         if response.status == 200:
             print(f"페이지 '{title}'이(가) 성공적으로 생성되었습니다.")
         else:
