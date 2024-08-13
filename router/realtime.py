@@ -21,6 +21,7 @@ from service.realtime import (
     RealtimeUserSession,
 )
 from service.websocket import ConnectionManager, depends_websocket_manager
+from utils.flow import exist_node_in, update_dict_in_list, exist_edge_in
 
 router = APIRouter(
     prefix="/realtime",
@@ -56,6 +57,7 @@ class Realtime:
                 received_data = await websocket.receive_json()
                 background_tasks.add_task(self.websocket_bg_worker, flow_id, current_user, received_data)
         except WebSocketDisconnect:
+            await self.worker_leave_user(flow_id, current_user)
             self.connections.disconnect(flow_id, str(current_user.id))
 
     async def websocket_bg_worker(
@@ -69,8 +71,10 @@ class Realtime:
             # position: {"x": 0, "y": 0}
         elif str(worker_data["op"]) == "4":
             await self.worker_change_node(flow_id, odm_user, worker_data["data"])
+            await self.node_redis_update(flow_id, worker_data["data"])
         elif str(worker_data["op"]) == "5":
             await self.worker_change_edge(flow_id, odm_user, worker_data["data"])
+            await self.edge_redis_update(flow_id, worker_data["data"])
         elif str(worker_data["op"]) == "6":
             await self.worker_user_chat(flow_id, odm_user, worker_data["data"]["message"])
         else:
@@ -81,6 +85,43 @@ class Realtime:
                     "error": "websocket.invalid.opcode"
                 }}
             )
+
+    async def node_redis_update(self, flow_id: str, update_node_data: dict):
+        flow_data = await self.rt_flow.get(flow_id)
+        node_id: str = update_node_data["id"]
+        if not exist_node_in(flow_data, node_id):
+            flow_data["nodes"].append(update_node_data)
+            return
+
+        if update_node_data.get("data"):
+            flow_data["nodes"] = update_dict_in_list(
+                flow_data["nodes"], node_id, update_node_data["data"], "data"
+            )
+
+        if update_node_data.get("position"):
+            flow_data["nodes"] = update_dict_in_list(
+                flow_data["nodes"], node_id, update_node_data["position"], "position"
+            )
+
+        if update_node_data.get("measured"):
+            flow_data["nodes"] = update_dict_in_list(
+                flow_data["nodes"], node_id, update_node_data["measured"], "measured"
+            )
+
+        await self.rt_flow.update(flow_id, flow_data)
+
+    async def edge_redis_update(self, flow_id: str, update_edge_data: dict):
+        flow_data = await self.rt_flow.get(flow_id)
+        edge_id: str = update_edge_data["id"]
+        if not exist_edge_in(flow_data, edge_id):
+            flow_data["edges"].append(update_edge_data)
+            return
+
+        flow_data["edges"] = update_dict_in_list(
+            flow_data["edges"], edge_id, update_edge_data
+        )
+
+        await self.rt_flow.update(flow_id, flow_data)
 
     async def worker_join_user(self, flow_id: str, odm_user: "ODMUser") -> None:
         await self.connections.broadcast(
@@ -213,21 +254,12 @@ class Realtime:
                     "chat": None,
                 }
                 await self.rt_user.update(flow_id, user_realtime_data)
+        await self.worker_join_user(flow_id, current_user)
+
+        export_data = odm_flow.model_dump()
+        del export_data["permission"]
+        del export_data["editor_option"]
         return {
             "message": "Joined Realtime Session",
-            "data": FrontendAction(
-                modals=[
-                    FrontendModal(
-                        type="success",
-                        title="IdeaBoard를 여는 중...",
-                        message="IdeaBoard를 여는 중입니다. 잠시만 기다려주세요.",
-                    )
-                ],
-                actions=[
-                    {
-                        "type": "redirect",
-                        "url": f"/brainstorm/{flow_id}",
-                    }
-                ],
-            ).model_dump(),
+            "data": export_data,
         }
