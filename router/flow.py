@@ -1,9 +1,7 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, status
 from fastapi_restful.cbv import cbv
-from beanie import PydanticObjectId
-from motor.motor_asyncio import AsyncIOMotorClient
-from entity.flow import Flow as ODMFlow, FlowUserPermission, Node, Edge, EditorOption
+from entity.flow import Flow as ODMFlow, Node, EditorOption
 from entity.user import User as ODMUser
 from service.credential import get_current_user
 from utils.log import Logger
@@ -25,7 +23,7 @@ class Flow:
         user: "ODMUser" = Depends(get_current_user),
     ):
         create_flow_model = ODMFlow(
-            permission={str(user.id): FlowUserPermission(permission=["owner"])},
+            permission={str(user.id): ["owner"]},
             nodes=[
                 Node(
                     id="system@start",
@@ -55,38 +53,37 @@ class Flow:
         return {
             "message": "Recommend prompt",
             "data": [
-                "What is the best way to learn programming?",
-                "What is the best way to learn programming?",
-                "What is the best way to learn programming?",
+                "python으로 자율주행 자동차 만들기",
+                "파이썬으로 머신러닝 공부하기",
+                "javascript로 실시간 채팅 웹사이트 만들기",
             ],
         }
 
     @router.get("/")
     async def get_project_flows(
         self,
-        _user: "ODMUser" = Depends(get_current_user),
+        user: "ODMUser" = Depends(get_current_user),
     ):
+        result = await ODMFlow.find({f"permission.{str(user.id)}": {"$exists": True}}).to_list()
+        return_data = []
+        for flow in result:
+            return_data.append(
+                {
+                    "id": str(flow.id),
+                    "name": flow.nodes[0].data["text"],
+                }
+            )
         return {
             "message": "Project flows",
-            "data": [
-                {
-                    "id": "flow_id",
-                    "name": "flow_name",
-                }
-            ],
+            "data": return_data,
         }
 
     @router.get("/recent")
     async def get_recent_flows(
         self,
-        _user: "ODMUser" = Depends(get_current_user),
+        user: "ODMUser" = Depends(get_current_user),
     ):
         return {
             "message": "Recent flows",
-            "data": [
-                {
-                    "id": "flow_id",
-                    "name": "flow_name",
-                }
-            ],
+            "data": user.recent,
         }

@@ -1,8 +1,10 @@
+ notion_log
 import aiohttp
 import os
 from urllib.parse import urlparse
 # import json
 # import asyncio
+
 
 # Notion API 설정
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
@@ -149,10 +151,10 @@ async def create_page_with_images(session, title, markdown_content, image_urls, 
             print(f"Page created successfully! You can view it at: {converted_url}")
             return converted_url
 
-
         else:
             print(f"오류 발생: {response.status}")
             print(await response.text())
+
 
 def convert_notion_url(original_url):
     new_base_url = "https://sparkcontents.notion.site/"
