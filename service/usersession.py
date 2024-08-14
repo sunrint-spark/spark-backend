@@ -3,7 +3,7 @@ import json
 from service.credential import get_redis_pool
 from datetime import timedelta
 
-from fastapi import HTTPException, status, Security, Depends
+from fastapi import HTTPException, status, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 security = HTTPBearer(
@@ -12,7 +12,7 @@ security = HTTPBearer(
 )
 
 
-class Session:
+class UserSession:
     def __init__(self, token: str):
         self.token = token
         self.redis_connection = get_redis_pool()
@@ -39,15 +39,15 @@ class Session:
         return await self.redis_connection.hexists("session", session_key)
 
 
-async def get_active_session(
+async def get_active_user_session(
     authorization: HTTPAuthorizationCredentials = Security(security),
-) -> Session:
+) -> UserSession:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    session = Session(token=authorization.credentials)
+    session = UserSession(token=authorization.credentials)
     if await session.is_valid():
         return session
     else:

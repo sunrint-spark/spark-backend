@@ -1,6 +1,6 @@
 from uuid import UUID, uuid4
 from beanie import Document, Indexed
-from pydantic import ConfigDict, Field, EmailStr
+from pydantic import ConfigDict, Field
 
 
 class User(Document):

@@ -1,5 +1,7 @@
 import os
 from datetime import datetime, timedelta
+
+import aiogoogle.excs
 from dotenv import load_dotenv
 
 import traceback
@@ -12,7 +14,7 @@ from entity.user import User as ODMUser
 from aiogoogle import Aiogoogle, auth as aiogoogle_auth
 
 from service.credential import depends_credential, Credential, get_current_user
-from service.session import Session, get_active_session
+from service.usersession import UserSession as Session
 
 load_dotenv(verbose=True)
 router = APIRouter(prefix="/user", tags=["user"])
@@ -24,6 +26,7 @@ GOOGLE_CLIENT_CREDS = aiogoogle_auth.creds.ClientCreds(
     redirect_uri="http://localhost:5173/callback",
 )
 GOOGLE_STATE = os.urandom(10).hex()
+print(GOOGLE_STATE)
 
 
 @cbv(router)
@@ -64,9 +67,12 @@ class User:
     ):
         if state != GOOGLE_STATE:
             raise HTTPException(status_code=400, detail="Invalid State")
-        user_creds = await self.google_oauth.oauth2.build_user_creds(
-            grant=code, client_creds=GOOGLE_CLIENT_CREDS
-        )
+        try:
+            user_creds = await self.google_oauth.oauth2.build_user_creds(
+                grant=code, client_creds=GOOGLE_CLIENT_CREDS
+            )
+        except aiogoogle.excs.HTTPError as _:
+            raise HTTPException(status_code=400, detail="Invalid Code")
         userinfo = await self.google_oauth.oauth2.get_me_info(user_creds=user_creds)
         odm_user = await ODMUser.find({"email": userinfo["email"]}).first_or_none()
         if not odm_user:
@@ -107,9 +113,8 @@ class User:
     async def logout(
         self,
         request: Request,
-        current_user_method: "ODMUser" = Depends(get_current_user),
+        _current_user: "ODMUser" = Depends(get_current_user),
     ):
-        _current_user = await current_user_method
         token = request.headers["Authorization"].split(" ")[1]
         await self.credential.delete_token(token=token)
         return {
@@ -117,15 +122,15 @@ class User:
             "data": None,
         }
 
-    @router.get("/@me", description="프로필 조회")
+    @router.get("/profile", description="프로필 조회")
     async def get_profile(
         self,
-        current_user_method: "ODMUser" = Depends(get_current_user),
+        current_user: "ODMUser" = Depends(get_current_user),
     ):
-        current_user = await current_user_method
         return {
             "message": "Profile found",
             "data": {
+                "name": current_user.name,
                 "username": current_user.username,
                 "email": current_user.email,
                 "profile_url": current_user.profile_url,
