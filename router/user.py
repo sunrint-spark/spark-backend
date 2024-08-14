@@ -1,5 +1,7 @@
 import os
 from datetime import datetime, timedelta
+
+import aiogoogle.excs
 from dotenv import load_dotenv
 
 import traceback
@@ -65,9 +67,12 @@ class User:
     ):
         if state != GOOGLE_STATE:
             raise HTTPException(status_code=400, detail="Invalid State")
-        user_creds = await self.google_oauth.oauth2.build_user_creds(
-            grant=code, client_creds=GOOGLE_CLIENT_CREDS
-        )
+        try:
+            user_creds = await self.google_oauth.oauth2.build_user_creds(
+                grant=code, client_creds=GOOGLE_CLIENT_CREDS
+            )
+        except aiogoogle.excs.HTTPError as _:
+            raise HTTPException(status_code=400, detail="Invalid Code")
         userinfo = await self.google_oauth.oauth2.get_me_info(user_creds=user_creds)
         odm_user = await ODMUser.find({"email": userinfo["email"]}).first_or_none()
         if not odm_user:
@@ -117,7 +122,7 @@ class User:
             "data": None,
         }
 
-    @router.get("/@me", description="프로필 조회")
+    @router.get("/profile", description="프로필 조회")
     async def get_profile(
         self,
         current_user: "ODMUser" = Depends(get_current_user),
@@ -125,6 +130,7 @@ class User:
         return {
             "message": "Profile found",
             "data": {
+                "name": current_user.name,
                 "username": current_user.username,
                 "email": current_user.email,
                 "profile_url": current_user.profile_url,

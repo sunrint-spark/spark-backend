@@ -12,7 +12,9 @@ def exist_edge_in(flow_data: dict, edge_id: str) -> bool:
     return False
 
 
-def update_dict_in_list(data_list: list[dict], target_id: str, new_data: dict, key: str = None) -> list[dict]:
+def update_dict_in_list(
+    data_list: list[dict], target_id: str, new_data: dict, key: str = None
+) -> list[dict]:
     for index, item in enumerate(data_list):
         if "id" in item and item["id"] == target_id:
             if key is None:
