@@ -23,7 +23,7 @@ def is_valid_image_url(url):
     path = parsed_url.path
     return path.lower().endswith(valid_extensions)
 
-async def create_page_with_images(session, title, markdown_content, image_urls):
+async def create_page_with_images(session, title, markdown_content, image_urls, search_urls):
     url = f"https://api.notion.com/v1/pages"
 
     # 마크다운 내용을 줄 단위로 분리
@@ -35,6 +35,7 @@ async def create_page_with_images(session, title, markdown_content, image_urls):
             # 제목 레벨 확인
             level = len(line.split()[0])
             content = line.lstrip('#').strip()
+
 
             if level == 1:
                 block_type = "heading_1"
@@ -61,6 +62,23 @@ async def create_page_with_images(session, title, markdown_content, image_urls):
                     "rich_text": [{"type": "text", "text": {"content": line}}]
                 }
             })
+    for search_url in search_urls:
+        search_url_block = {
+            "object": "block",
+            "type": "paragraph",
+            "paragraph": {
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": search_url,
+                            "link": {"url": search_url}
+                        }
+                    }
+                ]
+            }
+        }
+        children.append(search_url_block)
 
     # 필터링된 이미지 URL 리스트
     filtered_image_urls = [url for url in image_urls if is_valid_image_url(url)]
@@ -82,7 +100,15 @@ async def create_page_with_images(session, title, markdown_content, image_urls):
             "object": "block",
             "type": "paragraph",
             "paragraph": {
-                "rich_text": [{"type": "text", "text": {"content": image_url}}]
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": image_url,  # 표시할 텍스트로 이미지 URL 사용
+                            "link": {"url": image_url}  # URL을 하이퍼링크로 추가
+                        }
+                    }
+                ]
             }
         }
         children.append(image_url_block)
@@ -104,9 +130,9 @@ async def create_page_with_images(session, title, markdown_content, image_urls):
             print(f"오류 발생: {response.status}")
             print(await response.text())
 
-async def notionlog(main_title, markdown_content, image_urls):
+async def notionlog(main_title, markdown_content, image_urls, search_urls):
     try:
         async with aiohttp.ClientSession() as session:
-            await create_page_with_images(session, main_title, markdown_content, image_urls)
+            await create_page_with_images(session, main_title, markdown_content, image_urls, search_urls)
     except Exception as e:
         print(f"An error occurred: {str(e)}")
