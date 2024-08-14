@@ -5,7 +5,9 @@ from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from fastapi import FastAPI
-from router import user, realtime
+from fastapi.middleware.cors import CORSMiddleware
+
+from router import user, realtime, flow
 
 from utils.log import Logger
 
@@ -19,7 +21,6 @@ async def lifespan(_server: FastAPI):
     await init_beanie(
         database=motor_client[os.getenv("MONGODB_DATABASE")],
         document_models=[
-            "entity.test.Test",
             "entity.user.User",
             "entity.flow.Flow",
         ],
@@ -38,10 +39,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 app.include_router(user.router)
 app.include_router(realtime.router)
-# app.include_router(gpt.router)
+app.include_router(flow.router)
 
 
 @app.get("/")
