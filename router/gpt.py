@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from .notion_log import notionlog
+from service.notion_log import notionlog
 
 router = APIRouter(
     tags=["GPT"],
