@@ -62,6 +62,15 @@ async def create_page_with_images(session, title, markdown_content, image_urls, 
                     "rich_text": [{"type": "text", "text": {"content": line}}]
                 }
             })
+
+    children.append({
+        "object": "block",
+        "type": "heading_3",
+        "heading_3": {
+            "rich_text": [{"type": "text", "text": {"content": "참조 링크"}}]
+        }
+    })
+
     for search_url in search_urls:
         search_url_block = {
             "object": "block",
@@ -80,6 +89,13 @@ async def create_page_with_images(session, title, markdown_content, image_urls, 
         }
         children.append(search_url_block)
 
+    children.append({
+        "object": "block",
+        "type": "heading_3",
+        "heading_3": {
+            "rich_text": [{"type": "text", "text": {"content": "참조 이미지"}}]
+        }
+    })
     # 필터링된 이미지 URL 리스트
     filtered_image_urls = [url for url in image_urls if is_valid_image_url(url)]
 
