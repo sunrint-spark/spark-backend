@@ -25,6 +25,28 @@ thread = client.beta.threads.create()
 
 # 전역 변수로 notion_image_urls 선언
 notion_image_urls = []
+notion_search_urls = []
+
+async def search_google_url(api_key, search_engine_id, query, num_results=1):
+    search_url = "https://www.googleapis.com/customsearch/v1"
+    search_params = {
+        "key": api_key,
+        "cx": search_engine_id,
+        "q": query,
+        "num": num_results,
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(search_url, params=search_params) as response:
+                if response.status != 200:
+                    raise HTTPException(status_code=response.status, detail=f"Google API error: {response.reason}")
+                results = await response.json()
+                search_urls = [item.get("link") for item in results.get("items", [])]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred while fetching urls: {str(e)}")
+
+    return search_urls
 
 async def search_google_images(api_key, search_engine_id, query, num_results=3):
     search_url = "https://www.googleapis.com/customsearch/v1"
@@ -50,6 +72,7 @@ async def search_google_images(api_key, search_engine_id, query, num_results=3):
 
 async def convert2json(answer):
     global notion_image_urls
+    global  notion_search_urls
     try:
         answer = answer.replace("```", "").strip()
         answer = answer.replace("json", "").strip()
@@ -61,6 +84,13 @@ async def convert2json(answer):
             )
             json_answer["image_urls"] = image_urls
             notion_image_urls = image_urls
+        if json_answer.get("search_keyword"):
+            for keyword in json_answer["search_keyword"]:
+                search_urls = await search_google_url(
+                    google_api_key, google_search_engine_id, keyword
+                )
+                json_answer["search_urls"] += search_urls
+                notion_search_urls += search_urls
 
         return json_answer
     except json.JSONDecodeError:
@@ -70,11 +100,12 @@ async def convert2json(answer):
 
 async def notionlogformat(json_answer):
     global notion_image_urls
+    global notion_search_urls
     print(f'notion_image_urls: {notion_image_urls}')
     main_title = json_answer.get("main_title")
     markdown_content = json_answer.get("markdown")
     print("노션에 기록중...")
-    await notionlog(main_title, markdown_content, notion_image_urls)
+    await notionlog(main_title, markdown_content, notion_image_urls, notion_search_urls)
 
 def threadcheck():
     global thread
