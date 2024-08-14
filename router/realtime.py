@@ -8,6 +8,7 @@ from fastapi import (
     BackgroundTasks,
     Query,
 )
+from pydantic_core import from_json
 from entity.user import User as ODMUser
 from entity.flow import Flow as ODMFlow
 from service.credential import get_current_user, get_current_user_ws
@@ -193,6 +194,15 @@ class Realtime:
         )
 
     async def worker_leave_user(self, flow_id: str, odm_user: "ODMUser") -> None:
+        room = await self.rt_user.get(flow_id)
+        del room[str(odm_user.id)]
+        if len(room.keys()) == 0:
+            await self.rt_user.delete(flow_id)
+            redis_flow_data = await self.rt_flow.get(flow_id)
+            odm_flow_model = await ODMFlow.get(flow_id)
+            await odm_flow_model.update({"$set": redis_flow_data})
+            await self.rt_flow.delete(flow_id)
+
         await self.connections.broadcast(
             flow_id,
             {
