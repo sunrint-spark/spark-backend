@@ -1,8 +1,10 @@
-import asyncio
+ notion_log
 import aiohttp
-import json
 import os
 from urllib.parse import urlparse
+# import json
+# import asyncio
+
 
 # Notion API 설정
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
@@ -15,9 +17,6 @@ headers = {
 }
 
 def is_valid_image_url(url):
-    """
-    Check if the URL ends with a valid image extension.
-    """
     valid_extensions = (".jpg", ".jpeg", ".png")
     parsed_url = urlparse(url)
     path = parsed_url.path
@@ -142,13 +141,30 @@ async def create_page_with_images(session, title, markdown_content, image_urls, 
     async with session.post(url, headers=headers, json=payload) as response:
         if response.status == 200:
             print(f"페이지 '{title}'이(가) 성공적으로 생성되었습니다.")
+            new_page = await response.json()
+            page_id = new_page['id']
+
+            page_url = f"https://www.notion.so/{page_id.replace('-', '')}"
+
+            converted_url = convert_notion_url(page_url)
+
+            print(f"Page created successfully! You can view it at: {converted_url}")
+            return converted_url
+
         else:
             print(f"오류 발생: {response.status}")
             print(await response.text())
 
+
+def convert_notion_url(original_url):
+    new_base_url = "https://sparkcontents.notion.site/"
+    path = original_url.replace("https://www.notion.so/", "")
+    new_url = new_base_url + path
+    return new_url
+
 async def notionlog(main_title, markdown_content, image_urls, search_urls):
     try:
         async with aiohttp.ClientSession() as session:
-            await create_page_with_images(session, main_title, markdown_content, image_urls, search_urls)
+            return await create_page_with_images(session, main_title, markdown_content, image_urls, search_urls)
     except Exception as e:
         print(f"An error occurred: {str(e)}")

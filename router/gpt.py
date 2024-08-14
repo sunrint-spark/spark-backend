@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from .notion_log import notionlog
+from service.notion_log import notionlog
 
 router = APIRouter(
     tags=["GPT"],
@@ -105,7 +105,11 @@ async def notionlogformat(json_answer):
     main_title = json_answer.get("main_title")
     markdown_content = json_answer.get("markdown")
     print("노션에 기록중...")
-    await notionlog(main_title, markdown_content, notion_image_urls, notion_search_urls)
+    notion_url = await notionlog(main_title, markdown_content, notion_image_urls, notion_search_urls)
+    result_json = {
+        "notion_url": notion_url
+    }
+    return result_json
 
 def threadcheck():
     global thread
@@ -139,7 +143,7 @@ class GPT:
                 print(f'json_answer: {json_answer}')
 
                 if json_answer.get("status") == "markdown":
-                    await notionlogformat(json_answer)
+                    return await notionlogformat(json_answer)
 
                 return json_answer
             else:
