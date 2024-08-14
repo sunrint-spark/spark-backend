@@ -44,7 +44,7 @@ class Flow:
                 str(user.id): EditorOption(viewport={"x": 0, "y": 0}),
             },
         )
-        await create_flow_model.insert()
+        await create_flow_model.create()
         return {"message": "Create flow", "data": {"id": str(create_flow_model.id)}}
 
     @router.get("/recommend")
