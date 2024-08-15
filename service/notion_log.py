@@ -1,4 +1,3 @@
- notion_log
 import aiohttp
 import os
 from urllib.parse import urlparse
@@ -161,6 +160,7 @@ def convert_notion_url(original_url):
     path = original_url.replace("https://www.notion.so/", "")
     new_url = new_base_url + path
     return new_url
+
 
 async def notionlog(main_title, markdown_content, image_urls, search_urls):
     try:

@@ -18,7 +18,7 @@ class User(Document):
         json_encoders={UUID: str},
     )
 
-    @field_serializer('id')
+    @field_serializer("id")
     def serialize_id(self, id: UUID):
         return str(id)
 
