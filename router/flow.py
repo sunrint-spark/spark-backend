@@ -64,7 +64,9 @@ class Flow:
         self,
         user: "ODMUser" = Depends(get_current_user),
     ):
-        result = await ODMFlow.find({f"permission.{str(user.id)}": {"$exists": True}}).to_list()
+        result = await ODMFlow.find(
+            {f"permission.{str(user.id)}": {"$exists": True}}
+        ).to_list()
         return_data = []
         for flow in result:
             return_data.append(

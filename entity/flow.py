@@ -31,7 +31,7 @@ class Flow(Document):
     edges: List[Edge] = Field(default=[])
     permission: Dict[str, list[Literal["read", "write", "owner"]]] = Field(default=[])
 
-    @field_serializer('id')
+    @field_serializer("id")
     def serialize_id(self, id: UUID):
         return str(id)
 

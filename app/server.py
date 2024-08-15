@@ -7,7 +7,7 @@ from beanie import init_beanie
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from router import user, realtime, flow
+from router import user, realtime, flow, brainstorm
 
 from utils.log import Logger
 
@@ -39,13 +39,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-origins = [
-    "http://localhost.tiangolo.com",
-    "https://localhost.tiangolo.com",
-    "http://localhost",
-    "http://localhost:8080",
-]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -58,6 +51,7 @@ app.add_middleware(
 app.include_router(user.router)
 app.include_router(realtime.router)
 app.include_router(flow.router)
+app.include_router(brainstorm.router)
 
 
 @app.get("/")

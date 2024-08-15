@@ -8,7 +8,6 @@ from fastapi import (
     BackgroundTasks,
     Query,
 )
-from pydantic_core import from_json
 from entity.user import User as ODMUser
 from entity.flow import Flow as ODMFlow
 from service.credential import get_current_user, get_current_user_ws
@@ -23,6 +22,7 @@ from service.websocket import ConnectionManager, depends_websocket_manager
 from utils.flow import exist_node_in, update_dict_in_list, exist_edge_in
 
 from utils.log import Logger
+
 logger = Logger.create(__name__, level=logging.DEBUG)
 
 router = APIRouter(prefix="/realtime", tags=["realtime"])
@@ -107,30 +107,42 @@ class Realtime:
     async def websocket_bg_worker(
         self, flow_id: str, odm_user: "ODMUser", worker_data: dict
     ):
-        logger.info(f"User {odm_user.name}({str(odm_user.id)}) send data: {worker_data}")
+        logger.info(
+            f"User {odm_user.name}({str(odm_user.id)}) send data: {worker_data}"
+        )
         if str(worker_data["op"]) == "3":
-            logger.info(f"User {odm_user.name}({str(odm_user.id)}) send mouse move {worker_data['data']}")
+            logger.info(
+                f"User {odm_user.name}({str(odm_user.id)}) send mouse move {worker_data['data']}"
+            )
             await self.worker_mouse_move(flow_id, odm_user, worker_data["data"])
             mouse_move_data = await self.rt_user.get(flow_id)
             mouse_move_data[str(odm_user.id)]["position"] = worker_data["data"]
             await self.rt_user.update(flow_id, mouse_move_data)
             # position: {"x": 0, "y": 0}
         elif str(worker_data["op"]) == "4":
-            logger.info(f"User {odm_user.name}({str(odm_user.id)}) change node {worker_data['data']}")
+            logger.info(
+                f"User {odm_user.name}({str(odm_user.id)}) change node {worker_data['data']}"
+            )
             await self.worker_change_node(flow_id, odm_user, worker_data["data"])
             await self.node_redis_update(flow_id, worker_data["data"])
         elif str(worker_data["op"]) == "5":
-            logger.info(f"User {odm_user.name}({str(odm_user.id)}) change edge {worker_data['data']}")
+            logger.info(
+                f"User {odm_user.name}({str(odm_user.id)}) change edge {worker_data['data']}"
+            )
             await self.worker_change_edge(flow_id, odm_user, worker_data["data"])
             await self.edge_redis_update(flow_id, worker_data["data"])
         elif str(worker_data["op"]) == "6":
-            logger.info(f"User {odm_user.name}({str(odm_user.id)}) send chat {worker_data['data']['message']}")
+            logger.info(
+                f"User {odm_user.name}({str(odm_user.id)}) send chat {worker_data['data']['message']}"
+            )
             await self.worker_user_chat(
                 flow_id, odm_user, worker_data["data"]["message"]
             )
         else:
             ws_user_connection = self.connections.get(flow_id, str(odm_user.id))
-            logger.info(f"User {odm_user.name}({str(odm_user.id)}) send invalid operation {worker_data}")
+            logger.info(
+                f"User {odm_user.name}({str(odm_user.id)}) send invalid operation {worker_data}"
+            )
             await ws_user_connection.send_json(
                 {
                     "op": -3,
@@ -291,7 +303,7 @@ async def realtime_endpoint(
     rt_user: RealtimeUserSession = Depends(depends_user_realtime),
     connections: ConnectionManager = Depends(depends_websocket_manager),
 ):
-    print("hello")
+    logger.info(f"New Realtime Connection: {flow_id}, ip: {websocket.client.host}")
     await websocket.accept()
     current_user = await get_current_user_ws(token, websocket)
     if current_user is None:
@@ -322,7 +334,9 @@ async def realtime_endpoint(
         await websocket.send_json({"op": 0, "msg": "Connected"})
         while True:
             received_data = await websocket.receive_json()
-            logger.info(f"User {current_user.name}({str(current_user.id)}) send data: {received_data}")
+            logger.info(
+                f"User {current_user.name}({str(current_user.id)}) send data: {received_data}"
+            )
             background_tasks.add_task(
                 realtime_instance.websocket_bg_worker,
                 flow_id=flow_id,
@@ -330,7 +344,9 @@ async def realtime_endpoint(
                 worker_data=received_data,
             )
             await asyncio.create_task(
-                realtime_instance.websocket_bg_worker(flow_id, current_user, received_data)
+                realtime_instance.websocket_bg_worker(
+                    flow_id, current_user, received_data
+                )
             )
     except WebSocketDisconnect:
         await realtime_instance.worker_leave_user(flow_id, current_user)
