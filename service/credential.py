@@ -60,14 +60,17 @@ class Credential:
         return await self.redis_connection.hexists("user", token)
 
 
+set_credential_manager = Credential()
+
+
 async def depends_credential():
-    return Credential()
+    return set_credential_manager
 
 
 async def get_current_user_ws(
     session_token: str,
     websocket: WebSocket,
-    credential: Credential = Depends(depends_credential),
+    credential: Credential = set_credential_manager,
 ) -> ODMUser | None:
     if os.getenv("TEST_MODE") == "true":
         if session_token == TEST_USER_ACCESS_TOKEN:
