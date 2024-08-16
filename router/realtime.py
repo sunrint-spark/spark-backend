@@ -198,7 +198,7 @@ class Realtime:
                 "op": 1,
                 "data": {
                     "uid": str(odm_user.id),
-                    "name": odm_user.username,
+                    "name": odm_user.name,
                     "username": odm_user.username,
                     "profile_url": odm_user.profile_url,
                 },
@@ -221,6 +221,7 @@ class Realtime:
                 "op": 2,
                 "data": {
                     "uid": str(odm_user.id),
+                    "name": odm_user.name,
                     "username": odm_user.username,
                     "profile_url": odm_user.profile_url,
                 },
@@ -328,7 +329,29 @@ async def realtime_endpoint(
         if recent_flows["id"] == flow_id:
             is_in_recent = True
     if not is_in_recent:
-        current_user.recent.append({"id": flow_id, "name": odm_flow.name})
+        permission = odm_flow.permission.get(str(current_user.id))
+        if "owner" in permission:
+            current_user.recent.append(
+                {
+                    "id": flow_id,
+                    "name": f"{current_user.name}님의 보드",
+                    "description": odm_flow.nodes[0].data["text"],
+                }
+            )
+        else:
+            owner_user_id: str | None = None
+            for user_id, permission in odm_flow.permission.items():
+                if "owner" in permission:
+                    owner_user_id = user_id
+                    break
+            owner_user = await ODMUser.get(owner_user_id)
+            current_user.recent.append(
+                {
+                    "id": flow_id,
+                    "name": f"[공유] {owner_user.name}님의 보드",
+                    "description": odm_flow.nodes[0].data["text"],
+                }
+            )
         await current_user.save()
     try:
         await websocket.send_json({"op": 0, "msg": "Connected"})
