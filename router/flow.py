@@ -43,7 +43,8 @@ class Flow:
             },
         )
         await create_flow_model.create()
-        return {"message": "Create flow", "data": {"id": str(create_flow_model.id)}}
+        logger.info(f"Create flow: {str(create_flow_model.id)}")
+        return {"message": "Create flow", "data": str(create_flow_model.id)}
 
     @router.get("/recommend")
     async def get_recommend_prompt(
