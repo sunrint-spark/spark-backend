@@ -1,17 +1,18 @@
 import asyncio
+import traceback
 
 import aiohttp, logging
 import json, os
-from fastapi import APIRouter, HTTPException, Body, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI as OpenAI
 
-from service.credential import get_current_user_ws
+from service.credential import get_current_user
 from service.notion_log import notionlog
 from entity.user import User as ODMUser
 
 from utils.log import Logger
-from typing import AsyncGenerator, Any
+from typing import AsyncGenerator
 
 logger = Logger.create(__name__, level=logging.DEBUG)
 
@@ -134,7 +135,6 @@ async def notionlogformat(json_answer):
 
 
 async def stream_assistant(prompt: str, thread_id: str) -> AsyncGenerator[str, None]:
-    yield json.dumps({"status": "running", "thread_id": thread_id})
     try:
         _message = await client.beta.threads.messages.create(
             thread_id=thread_id,
@@ -145,11 +145,13 @@ async def stream_assistant(prompt: str, thread_id: str) -> AsyncGenerator[str, N
             thread_id=thread_id,
             assistant_id=gpt_assistant_id,
         )
+        logger.info(f"Run ID: {run.id}")
         while True:
             run = await client.beta.threads.runs.retrieve(
                 thread_id=thread_id, run_id=run.id
             )
-            if run.status == "complete":
+            logger.info(f"[{thread_id}, Run status: {run.status}")
+            if run.status == "completed":
                 break
             await asyncio.sleep(1)
         messages = await client.beta.threads.messages.list(
@@ -160,31 +162,37 @@ async def stream_assistant(prompt: str, thread_id: str) -> AsyncGenerator[str, N
         if json_answer.get("status") == "markdown":
             json_answer = await notionlogformat(json_answer)
 
-        yield json.dumps(
-            {
-                "status": "completed",
-                "thread_id": thread_id,
-                "result": json_answer,
-            }
+        yield str(
+            json.dumps(
+                {
+                    "status": "completed",
+                    "thread_id": thread_id,
+                    "result": json_answer,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
         )
 
     except Exception as e:
+        print(e)
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
-@router.get("/steam")
+@router.get("/")
 async def brainstorm(
-    thread_id: str,
-    prompt: str = Body(...),
-    _user: "ODMUser" = Depends(get_current_user_ws),
+    thread_id: str = Query(..., title="Thread ID"),
+    prompt: str = Query(..., title="Prompt"),
+    _user: "ODMUser" = Depends(get_current_user),
 ):
     if thread_id is None:
         raise HTTPException(status_code=400, detail="Thread ID is required.")
     if thread_id == "new":
         new_thread = await client.beta.threads.create()
         thread_id = new_thread.id
+    print("hello")
 
     return StreamingResponse(
-        stream_assistant(prompt, thread_id),
-        media_type="application/x-ndjson",
+        stream_assistant(prompt, thread_id), media_type="text/event-stream"
     )
