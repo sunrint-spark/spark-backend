@@ -139,6 +139,11 @@ async def create_page_with_images(
         "children": children,
     }
 
+    text_context = []
+    text_context.append(lines)
+    text_context.append(image_urls)
+    text_context.append(search_urls)
+
     async with session.post(url, headers=headers, json=payload) as response:
         if response.status == 200:
             print(f"페이지 '{title}'이(가) 성공적으로 생성되었습니다.")
@@ -150,7 +155,9 @@ async def create_page_with_images(
             converted_url = convert_notion_url(page_url)
 
             print(f"Page created successfully! You can view it at: {converted_url}")
-            return converted_url
+
+            json_return = {"page_url": converted_url, "text_context": text_context}
+            return json_return
 
         else:
             print(f"오류 발생: {response.status}")

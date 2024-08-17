@@ -130,8 +130,7 @@ async def notionlogformat(json_answer):
     notion_url = await notionlog(
         main_title, markdown_content, notion_image_urls, notion_search_urls
     )
-    result_json = {"notion_url": notion_url}
-    return result_json
+    return notion_url
 
 
 async def stream_assistant(prompt: str, thread_id: str) -> AsyncGenerator[str, None]:
