@@ -179,7 +179,7 @@ async def stream_assistant(prompt: str, thread_id: str) -> AsyncGenerator[str, N
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
-@router.get("/")
+@router.get("/stream")
 async def brainstorm(
     thread_id: str = Query(..., title="Thread ID"),
     prompt: str = Query(..., title="Prompt"),

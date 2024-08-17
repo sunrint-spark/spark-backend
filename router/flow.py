@@ -16,7 +16,7 @@ router = APIRouter(
 
 @cbv(router)
 class Flow:
-    @router.post("/", status_code=status.HTTP_201_CREATED)
+    @router.post('/', status_code=status.HTTP_201_CREATED)
     async def create_flow(
         self,
         prompt: str,
@@ -32,6 +32,7 @@ class Flow:
                     position={"x": 0, "y": 0},
                     data={
                         "text": prompt,
+                        "isAllowEditing": True,
                     },
                     selected=True,
                     dragging=True,
@@ -88,5 +89,5 @@ class Flow:
     ):
         return {
             "message": "Recent flows",
-            "data": user.recent,
+            "data": user.recent[::-1],
         }
