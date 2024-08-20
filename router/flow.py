@@ -1,5 +1,5 @@
 import logging, uuid
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from fastapi_restful.cbv import cbv
 from entity.user import User as ODMUser
 from entity.flow import Flow as ModelFlow, Node
@@ -47,7 +47,9 @@ class Flow:
             metadata={
                 "owner_id": str(user.id),
                 "owner_name": user.name,
+                "owner_profile_url": user.profile_url,
                 "start_message": prompt,
+                "viewers": 0,
             },
         )
         await liveblock.set_document(
@@ -56,6 +58,32 @@ class Flow:
         )
         logger.info(f"Create flow: {str(create_flow_model.id)}")
         return {"message": "Create flow", "data": str(create_flow_model.id)}
+
+    @router.get("/community")
+    async def get_community_flows(
+        self,
+        limit: int = Query(..., ge=1, le=100),
+        query: str = Query(None),
+    ):
+        kwargs_data = {"limit": limit, "groupIds": ["community"]}
+        if query:
+            kwargs_data["query"] = query
+        result = await liveblock.search_rooms(**kwargs_data)
+        return_data = []
+        for flow in result.data.values():
+            return_data.append(
+                {
+                    "id": str(flow.id),
+                    "name": flow["metadata"]["start_message"],
+                    "author_name": flow["metadata"]["owner_name"],
+                    "author_profile_url": flow["metadata"]["owner_profile_url"],
+                    "viewers": flow["metadata"]["viewers"],
+                }
+            )
+        return {
+            "message": "Community flows",
+            "data": return_data,
+        }
 
     @router.get("/recommend")
     async def get_recommend_prompt(

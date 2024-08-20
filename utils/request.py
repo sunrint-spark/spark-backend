@@ -3,7 +3,7 @@ from aiohttp import ClientSession
 
 
 class BaseRequest:
-    def __init__(self, session: ClientSession | None) -> None:
+    def __init__(self, session: ClientSession | None = None) -> None:
         self.session: ClientSession | None = session
 
     async def request(
