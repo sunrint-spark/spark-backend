@@ -19,6 +19,7 @@ logger = Logger.create(__name__, level=logging.DEBUG)
 router = APIRouter(
     prefix="/brainstorm",
     tags=["GPT"],
+
 )
 client = OpenAI()
 
@@ -95,13 +96,14 @@ async def convert2json(answer):
         answer = answer.replace("```", "").strip()
         answer = answer.replace("json", "").strip()
         json_answer = json.loads(answer.strip())
-
+        # 이미지 링크
         if json_answer.get("image_keyword"):
             image_urls = await search_google_images(
                 google_api_key, google_search_engine_id, json_answer["image_keyword"]
             )
             json_answer["image_urls"] = image_urls
             notion_image_urls = image_urls
+        # 참조 링크
         if json_answer.get("search_keyword"):
             for keyword in json_answer["search_keyword"]:
                 search_urls = await search_google_url(
@@ -109,6 +111,19 @@ async def convert2json(answer):
                 )
                 json_answer["search_urls"] += search_urls
                 notion_search_urls += search_urls
+        # 텍스트 반환
+        if json_answer.get("summary"):
+            context = json_answer.get("summary")
+            context += "\n\n Reference Links:"
+            for url in notion_search_urls:
+                context += f"\n{url}"
+
+            context += "\n\n Image Links:"
+            for url in notion_image_urls:
+                context += f"\n{url}"
+
+            json_answer["summary"] = context
+
 
         return json_answer
     except json.JSONDecodeError:
@@ -123,7 +138,7 @@ async def convert2json(answer):
 async def notionlogformat(json_answer):
     global notion_image_urls
     global notion_search_urls
-    print(f"notion_image_urls: {notion_image_urls}")
+    #print(f"notion_image_urls: {notion_image_urls}")
     main_title = json_answer.get("main_title")
     markdown_content = json_answer.get("markdown")
     print("노션에 기록중...")
