@@ -1,8 +1,9 @@
-import logging
+import logging, uuid
 from fastapi import APIRouter, Depends, status
 from fastapi_restful.cbv import cbv
-from entity.flow import Flow as ODMFlow, Node, EditorOption
 from entity.user import User as ODMUser
+from entity.flow import Flow as ModelFlow, Node
+from service.liveblock import liveblock
 from service.credential import get_current_user
 from utils.log import Logger
 
@@ -16,14 +17,13 @@ router = APIRouter(
 
 @cbv(router)
 class Flow:
-    @router.post('/', status_code=status.HTTP_201_CREATED)
+    @router.post("/", status_code=status.HTTP_201_CREATED)
     async def create_flow(
         self,
         prompt: str,
         user: "ODMUser" = Depends(get_current_user),
     ):
-        create_flow_model = ODMFlow(
-            permission={str(user.id): ["owner"]},
+        create_flow_model = ModelFlow(
             nodes=[
                 Node(
                     id="system@start",
@@ -39,11 +39,21 @@ class Flow:
                 )
             ],
             edges=[],
-            editor_option={
-                str(user.id): EditorOption(viewport={"x": 0, "y": 0}),
+        )
+        await liveblock.create_room(
+            room_id=create_flow_model.id,
+            default_permission=[],
+            user_permission={str(user.id): "owner"},
+            metadata={
+                "owner_id": str(user.id),
+                "owner_name": user.name,
+                "start_message": prompt,
             },
         )
-        await create_flow_model.create()
+        await liveblock.set_document(
+            room_id=create_flow_model.id,
+            document=create_flow_model.model_dump(),
+        )
         logger.info(f"Create flow: {str(create_flow_model.id)}")
         return {"message": "Create flow", "data": str(create_flow_model.id)}
 
@@ -62,19 +72,19 @@ class Flow:
         }
 
     @router.get("/")
-    async def get_project_flows(
+    async def get_my_project_flows(
         self,
         user: "ODMUser" = Depends(get_current_user),
     ):
-        result = await ODMFlow.find(
-            {f"permission.{str(user.id)}": {"$exists": True}}
-        ).to_list()
+        result = await liveblock.search_rooms(
+            userId=str(user.id),
+        )
         return_data = []
-        for flow in result:
+        for flow in result.data.values():
             return_data.append(
                 {
                     "id": str(flow.id),
-                    "name": flow.nodes[0].data["text"],
+                    "name": flow["metadata"]["start_message"],
                 }
             )
         return {

@@ -22,11 +22,9 @@ async def lifespan(_server: FastAPI):
         database=motor_client[os.getenv("MONGODB_DATABASE")],
         document_models=[
             "entity.user.User",
-            "entity.flow.Flow",
         ],
     )
     logger.info("Connected to MongoDB")
-    _server.state.motor_client = motor_client  # MongoDB 클라이언트를 상태에 저장
     yield
     motor_client.close()
     logger.info("Disconnected from MongoDB")
