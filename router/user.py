@@ -23,7 +23,7 @@ GOOGLE_CLIENT_CREDS = aiogoogle_auth.creds.ClientCreds(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     scopes=["profile", "email"],
-    redirect_uri="http://localhost:5173/callback",
+    redirect_uri=os.getenv("GOOGLE_REDIRECT_URI"),
 )
 GOOGLE_STATE = os.urandom(10).hex()
 print(GOOGLE_STATE)

@@ -1,4 +1,3 @@
-from beanie import Document
 from pydantic import BaseModel, Field, field_serializer
 from uuid import UUID, uuid4
 from typing import List, Dict, Literal
@@ -24,16 +23,12 @@ class EditorOption(BaseModel):
     viewport: Dict[str, int]
 
 
-class Flow(Document):
-    id: UUID = Field(default_factory=uuid4, alias="_id")
+class Flow(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
     editor_option: Dict[str, EditorOption] = Field(default={})
     nodes: List[Node] = Field(default=[])
     edges: List[Edge] = Field(default=[])
-    permission: Dict[str, list[Literal["read", "write", "owner"]]] = Field(default=[])
 
     @field_serializer("id")
     def serialize_id(self, id: UUID):
         return str(id)
-
-    class Settings:
-        name = "flows"  # MongoDB 컬렉션 이름
