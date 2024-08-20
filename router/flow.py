@@ -1,3 +1,4 @@
+import asyncio
 import logging, uuid
 from fastapi import APIRouter, Depends, status, Query
 from fastapi_restful.cbv import cbv
@@ -23,41 +24,48 @@ class Flow:
         prompt: str,
         user: "ODMUser" = Depends(get_current_user),
     ):
-        create_flow_model = ModelFlow(
-            nodes=[
-                Node(
-                    id="system@start",
-                    type="aiStartupNode",
-                    measured={},
-                    position={"x": 0, "y": 0},
-                    data={
-                        "text": prompt,
-                        "isAllowEditing": True,
-                    },
-                    selected=True,
-                    dragging=True,
-                )
-            ],
-            edges=[],
-        )
+        new_flow_id = uuid.uuid4()
+        create_flow_model = {
+            "nodes": {
+                "liveblocksType": "LiveList",
+                "data": [
+                    {
+                        "id": "system@start",
+                        "type": "aiStartupNode",
+                        "measured": {},
+                        "position": {"x": 0, "y": 0},
+                        "data": {
+                            "text": prompt,
+                            "isAllowEditing": True,
+                        },
+                        "selected": True,
+                        "dragging": True,
+                    }
+                ],
+            },
+            "edges": {
+                "liveblocksType": "LiveList",
+                "data": [],
+            },
+        }
         await liveblock.create_room(
-            room_id=create_flow_model.id,
+            room_id=str(new_flow_id),
             default_permission=[],
-            user_permission={str(user.id): "owner"},
+            user_permission={str(user.id): ["room:write"]},
             metadata={
                 "owner_id": str(user.id),
                 "owner_name": user.name,
                 "owner_profile_url": user.profile_url,
                 "start_message": prompt,
-                "viewers": 0,
             },
         )
+        await asyncio.sleep(1)
         await liveblock.set_document(
-            room_id=create_flow_model.id,
-            document=create_flow_model.model_dump(),
+            room_id=str(new_flow_id),
+            document=create_flow_model,
         )
-        logger.info(f"Create flow: {str(create_flow_model.id)}")
-        return {"message": "Create flow", "data": str(create_flow_model.id)}
+        logger.info(f"Create flow: {str(new_flow_id)}")
+        return {"message": "Create flow", "data": str(new_flow_id)}
 
     @router.get("/community")
     async def get_community_flows(
@@ -73,7 +81,7 @@ class Flow:
         for flow in result.data.values():
             return_data.append(
                 {
-                    "id": str(flow.id),
+                    "id": str(flow["id"]),
                     "name": flow["metadata"]["start_message"],
                     "author_name": flow["metadata"]["owner_name"],
                     "author_profile_url": flow["metadata"]["owner_profile_url"],
@@ -108,10 +116,10 @@ class Flow:
             userId=str(user.id),
         )
         return_data = []
-        for flow in result.data.values():
+        for flow in result["data"]:
             return_data.append(
                 {
-                    "id": str(flow.id),
+                    "id": str(flow["id"]),
                     "name": flow["metadata"]["start_message"],
                 }
             )

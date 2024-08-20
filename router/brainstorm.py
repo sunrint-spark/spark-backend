@@ -19,7 +19,6 @@ logger = Logger.create(__name__, level=logging.DEBUG)
 router = APIRouter(
     prefix="/brainstorm",
     tags=["GPT"],
-
 )
 client = OpenAI()
 
@@ -124,7 +123,6 @@ async def convert2json(answer):
 
             json_answer["summary"] = context
 
-
         return json_answer
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Failed to decode JSON response.")
@@ -138,7 +136,7 @@ async def convert2json(answer):
 async def notionlogformat(json_answer):
     global notion_image_urls
     global notion_search_urls
-    #print(f"notion_image_urls: {notion_image_urls}")
+    # print(f"notion_image_urls: {notion_image_urls}")
     main_title = json_answer.get("main_title")
     markdown_content = json_answer.get("markdown")
     print("노션에 기록중...")

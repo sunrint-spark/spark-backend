@@ -57,7 +57,7 @@ class Flow:
                 },
             }
         else:
-            if fetch_room_data.usersAccesses.get(str(current_user.id)) is None:
+            if fetch_room_data["usersAccesses"].get(str(current_user.id)) is None:
                 raise HTTPException(
                     status_code=403,
                     detail={
@@ -73,7 +73,7 @@ class Flow:
                 "message": "Joined Realtime Session",
                 "data": {
                     "access_token": liveblock_access_token["token"],
-                    "permission": fetch_room_data.usersAccesses.get(
+                    "permission": fetch_room_data["usersAccesses"].get(
                         str(current_user.id)
                     ),
                 },

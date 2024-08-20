@@ -62,31 +62,33 @@ class LiveBlock(BaseRequest):
         room_id: str,
         default_permission: list[str],
         user_permission: dict[str, str],
-        metadata: dict | None,
+        metadata: dict = {},
     ) -> dict:
         request_data = {
             "id": room_id,
             "defaultAccesses": default_permission,
-            "metadata": metadata or {},
             "usersAccesses": user_permission,
             "groupsAccesses": {},
+            "metadata": metadata
         }
         response = await self.post(
             "https://api.liveblocks.io/v2/rooms",
             json=request_data,
             headers={"Authorization": "Bearer " + LIVEBLOCK_SECRET_KEY},
         )
+        print(await response.text())
         return await response.json()
 
     async def set_document(self, room_id: str, document: dict) -> dict:
         response = await self.post(
-            f"https://api.liveblocks.io/rooms/{room_id}/storage",
+            f"https://api.liveblocks.io/v2/rooms/{room_id}/storage",
             json={
                 "liveblocksType": "LiveObject",
                 "data": document,
             },
             headers={"Authorization": "Bearer " + LIVEBLOCK_SECRET_KEY},
         )
+        print(await response.text())
         return await response.json()
 
     async def broadcast(self, room_id: str, data: dict) -> dict:
