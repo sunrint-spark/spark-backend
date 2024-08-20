@@ -28,24 +28,56 @@ class Flow:
     async def join_realtime(
         self,
         flow_id: str,
+        community: bool = Query(False),
         current_user: "ODMUser" = Depends(get_current_user),
     ):
         fetch_room_data = await liveblock.fetch_room(flow_id)
         if fetch_room_data.get("error") == "ROOM_NOT_FOUND":
             raise HTTPException(status_code=404, detail="Flow not found")
-        if fetch_room_data.usersAccesses.get(str(current_user.id)) is None:
-            raise HTTPException(status_code=403, detail="Permission Denied")
-        liveblock_access_token = await liveblock.create_token(
-            odm_user=current_user,
-        )
-        logger.info(f"User {current_user.username} joined realtime session({flow_id})")
-        return {
-            "message": "Joined Realtime Session",
-            "data": {
-                "access_token": liveblock_access_token["token"],
-                "permission": ["@me"],
-            },
-        }
+        if community:
+            if fetch_room_data.groupAccesses.get("community") is None:
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "error": "COMMUNITY_PERMISSION_DENIED",
+                        "message": "Permission Denied",
+                    },
+                )
+            liveblock_access_token = await liveblock.create_token(
+                odm_user=current_user, groups=["community"]
+            )
+            logger.info(
+                f"User {current_user.username} joined realtime session({flow_id}.community)"
+            )
+            return {
+                "message": "Joined Realtime Session",
+                "data": {
+                    "access_token": liveblock_access_token["token"],
+                    "permission": "room:read",
+                },
+            }
+        else:
+            if fetch_room_data.usersAccesses.get(str(current_user.id)) is None:
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "error": "PERMISSION_DENIED",
+                        "message": "Permission Denied",
+                    },
+                )
+            liveblock_access_token = await liveblock.create_token(odm_user=current_user)
+            logger.info(
+                f"User {current_user.username} joined realtime session({flow_id}.private)"
+            )
+            return {
+                "message": "Joined Realtime Session",
+                "data": {
+                    "access_token": liveblock_access_token["token"],
+                    "permission": fetch_room_data.usersAccesses.get(
+                        str(current_user.id)
+                    ),
+                },
+            }
 
     @router.get("/user")
     async def query_user_by_email(self, email: str = Query(...)):
@@ -64,6 +96,29 @@ class Flow:
                 "user_id": str(target_user.id),
             },
         }
+
+    @router.post("/{flow_id}/publish")
+    async def publish_flow(
+        self,
+        flow_id: str,
+        current_user: "ODMUser" = Depends(get_current_user),
+    ):
+        fetch_room_data = await liveblock.fetch_room(flow_id)
+        if fetch_room_data.get("error") == "ROOM_NOT_FOUND":
+            raise HTTPException(
+                status_code=404,
+                detail={"error": "FLOW_NOT_FOUND", "message": "Flow not found"},
+            )
+        if not fetch_room_data["metadata"].get("owner_id") == str(current_user.id):
+            raise HTTPException(
+                status_code=403,
+                detail={"error": "PERMISSION_DENIED", "message": "Permission Denied"},
+            )
+        fetch_room_data.groupAccesses["community"] = "room:read"
+        await liveblock.update_room(
+            room_id=flow_id, groupAccesses=fetch_room_data.groupAccesses
+        )
+        return {"code": "DOCUMENT_PUBLISHED", "message": "Document published"}
 
     @router.get("/{flow_id}/invite")
     async def get_invite_list(
