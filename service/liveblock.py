@@ -69,7 +69,7 @@ class LiveBlock(BaseRequest):
             "defaultAccesses": default_permission,
             "usersAccesses": user_permission,
             "groupsAccesses": {},
-            "metadata": metadata
+            "metadata": metadata,
         }
         response = await self.post(
             "https://api.liveblocks.io/v2/rooms",

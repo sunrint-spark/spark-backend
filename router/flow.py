@@ -3,7 +3,6 @@ import logging, uuid
 from fastapi import APIRouter, Depends, status, Query
 from fastapi_restful.cbv import cbv
 from entity.user import User as ODMUser
-from entity.flow import Flow as ModelFlow, Node
 from service.liveblock import liveblock
 from service.credential import get_current_user
 from utils.log import Logger
