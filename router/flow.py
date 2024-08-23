@@ -100,9 +100,9 @@ class Flow:
         return {
             "message": "Recommend prompt",
             "data": [
-                "python으로 자율주행 자동차 만들기",
+                "자율주행 자동차 프로젝트",
                 "파이썬으로 머신러닝 공부하기",
-                "javascript로 실시간 채팅 웹사이트 만들기",
+                "환경 보호화 관련된 웹사이트",
             ],
         }
 
