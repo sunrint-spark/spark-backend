@@ -35,7 +35,7 @@ class Flow:
         if fetch_room_data.get("error") == "ROOM_NOT_FOUND":
             raise HTTPException(status_code=404, detail="Flow not found")
         if community:
-            if fetch_room_data.groupsAccesses.get("community") is None:
+            if fetch_room_data["groupsAccesses"].get("community") is None:
                 raise HTTPException(
                     status_code=403,
                     detail={
@@ -104,19 +104,20 @@ class Flow:
         current_user: "ODMUser" = Depends(get_current_user),
     ):
         fetch_room_data = await liveblock.fetch_room(flow_id)
+        print(fetch_room_data)
         if fetch_room_data.get("error") == "ROOM_NOT_FOUND":
             raise HTTPException(
                 status_code=404,
                 detail={"error": "FLOW_NOT_FOUND", "message": "Flow not found"},
             )
-        if not fetch_room_data["metadata"].get("owner_id") == str(current_user.id):
-            raise HTTPException(
-                status_code=403,
-                detail={"error": "PERMISSION_DENIED", "message": "Permission Denied"},
-            )
-        fetch_room_data.groupsAccesses["community"] = "room:write"
+        # if not fetch_room_data["metadata"].get("owner_id") == str(current_user.id):
+        #     raise HTTPException(
+        #         status_code=403,
+        #         detail={"error": "PERMISSION_DENIED", "message": "Permission Denied"},
+        #     )
+        fetch_room_data["groupsAccesses"]["community"] = "room:write"
         await liveblock.update_room(
-            room_id=flow_id, groupsAccesses=fetch_room_data.groupsAccesses
+            room_id=flow_id, groupsAccesses=fetch_room_data["groupsAccesses"]
         )
         return {"code": "DOCUMENT_PUBLISHED", "message": "Document published"}
 
