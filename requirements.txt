@@ -11,3 +11,4 @@ PyJWT
 aiogoogle
 openai
 aiohttp
+gdshortener

@@ -1,5 +1,7 @@
 import asyncio
 import logging, uuid
+import gdshortener
+import random
 from fastapi import APIRouter, Depends, status, Query
 from fastapi_restful.cbv import cbv
 from entity.user import User as ODMUser
@@ -17,6 +19,8 @@ router = APIRouter(
 
 @cbv(router)
 class Flow:
+    shorturl = gdshortener.VGDShortener()
+
     @router.post("/", status_code=status.HTTP_201_CREATED)
     async def create_flow(
         self,
@@ -105,6 +109,16 @@ class Flow:
                 "환경 보호화 관련된 웹사이트",
             ],
         }
+
+    @router.get("/shorturl")
+    async def get_short_url(
+        self,
+        url: str = Query(..., title="URL"),
+        user: "ODMUser" = Depends(get_current_user),
+    ):
+        code = random.randint(10000000, 99999999)
+        short_url, _ = self.shorturl.shorten(url, custom_url="spark" + str(code))
+        return {"message": "Short URL", "data": short_url}
 
     @router.get("/")
     async def get_my_project_flows(
