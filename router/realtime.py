@@ -114,7 +114,7 @@ class Flow:
                 status_code=403,
                 detail={"error": "PERMISSION_DENIED", "message": "Permission Denied"},
             )
-        fetch_room_data.groupAccesses["community"] = "room:read"
+        fetch_room_data.groupAccesses["community"] = "room:write"
         await liveblock.update_room(
             room_id=flow_id, groupAccesses=fetch_room_data.groupAccesses
         )
