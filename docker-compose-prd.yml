@@ -26,4 +26,4 @@ services:
         context: .
         dockerfile: Dockerfile
     ports:
-        - "6974:80"
+        - "80:80"
