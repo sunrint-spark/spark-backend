@@ -117,7 +117,7 @@ class Flow:
             )
         await liveblock.update_room(
             room_id=flow_id, groupsAccesses={
-                "community": "room:write"
+                "community": ["room:write"]
             }
         )
         return {"code": "DOCUMENT_PUBLISHED", "message": "Document published"}
