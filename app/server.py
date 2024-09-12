@@ -37,9 +37,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+origins = [
+    "http://localhost:5173",
+    "https://spark.ychan.me",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://spark.ychan.me"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
