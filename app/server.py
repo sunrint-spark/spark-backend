@@ -1,6 +1,5 @@
 import os
 import logging
-from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
@@ -12,7 +11,6 @@ from router import user, realtime, flow, brainstorm
 from utils.log import Logger
 
 logger = Logger.create(__name__, level=logging.DEBUG)
-load_dotenv()
 
 
 @asynccontextmanager

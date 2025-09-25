@@ -1,11 +1,9 @@
 import os
 import logging
-from dotenv import load_dotenv
 from utils.log import Logger
 from entity.user import User as ODMUser
 
 logger = Logger.create(__name__, level=logging.DEBUG)
-load_dotenv()
 
 if os.getenv("TEST_MODE") == "true":
     logger.info("Test Mode On")
