@@ -38,6 +38,8 @@ app = FastAPI(
 origins = [
     "http://localhost:5173",
     "https://spark.ychan.me",
+    "https://spark-frontend-pw2z.vercel.app/",
+    "https://spark.xiba.site",
 ]
 app.add_middleware(
     CORSMiddleware,
