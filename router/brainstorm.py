@@ -2,7 +2,8 @@ import asyncio
 import traceback
 
 import aiohttp, logging
-import json, os
+import json
+from utils.env_validator import settings
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI as OpenAI
@@ -23,10 +24,10 @@ router = APIRouter(
 client = OpenAI()
 
 # 환경 변수에서 API 키 로드
-OpenAI.api_key = os.getenv("OPENAI_API_KEY")
-google_api_key = os.getenv("GOOGLE_API_KEY")
-google_search_engine_id = os.getenv("GOOGLE_SEARCH_ENGINE_ID")
-gpt_assistant_id = os.getenv("ASSISTANT_ID")
+OpenAI.api_key = settings.OPENAI_API_KEY
+google_api_key = settings.GOOGLE_API_KEY
+google_search_engine_id = settings.GOOGLE_SEARCH_ENGINE_ID
+gpt_assistant_id = getattr(settings, "ASSISTANT_ID", None)
 
 # 전역 변수로 notion_image_urls 선언
 notion_image_urls = []
