@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     LIVEBLOCK_SECRET_KEY: str
     GOOGLE_REDIRECT_URI: str
     TEST_MODE: str = "false"
+    JWT_SECRET_KEY: str
 
 
 settings = Settings()
