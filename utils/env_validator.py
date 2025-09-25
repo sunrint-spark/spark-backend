@@ -5,7 +5,7 @@ __all__ = ["settings"]
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=True
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=True, env_ignore_other_envs=True
     )
     MONGODB_URI: str
     MONGODB_DATABASE: str
