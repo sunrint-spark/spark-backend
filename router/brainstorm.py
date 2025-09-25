@@ -21,10 +21,9 @@ router = APIRouter(
     prefix="/brainstorm",
     tags=["GPT"],
 )
-client = OpenAI()
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 # 환경 변수에서 API 키 로드
-OpenAI.api_key = settings.OPENAI_API_KEY
 google_api_key = settings.GOOGLE_API_KEY
 google_search_engine_id = settings.GOOGLE_SEARCH_ENGINE_ID
 gpt_assistant_id = getattr(settings, "ASSISTANT_ID", None)
