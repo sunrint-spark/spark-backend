@@ -8,7 +8,8 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status, Security, Depends, WebSocket
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from app.testmode import get_or_create_test_user, TEST_USER_ACCESS_TOKEN
+if os.getenv("TEST_MODE") == "true":
+    from app.testmode import get_or_create_test_user, TEST_USER_ACCESS_TOKEN
 from app.redisconn import RedisConn
 from entity.user import User as ODMUser
 
