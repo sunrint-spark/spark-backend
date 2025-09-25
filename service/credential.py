@@ -1,4 +1,4 @@
-import os
+from utils.env_validator import settings
 import jwt
 
 from passlib.context import CryptContext
@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status, Security, Depends, WebSocket
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-if os.getenv("TEST_MODE") == "true":
+if settings.TEST_MODE == "true":
     from app.testmode import get_or_create_test_user, TEST_USER_ACCESS_TOKEN
 from app.redisconn import RedisConn
 from entity.user import User as ODMUser
@@ -22,7 +22,7 @@ security = HTTPBearer(
 
 def get_redis_pool():
     redis_pool = RedisConn(
-        host=os.environ["REDIS_HOST"], port=int(os.environ["REDIS_PORT"]), db=0
+        host=settings.REDIS_HOST, port=int(settings.REDIS_PORT), db=0
     )
     return redis_pool.connection
 
@@ -47,7 +47,7 @@ class Credential:
         expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({"exp": expire})
         encoded_token = jwt.encode(
-            to_encode, os.environ["JWT_SECRET_KEY"], algorithm="HS256"
+            to_encode, settings.JWT_SECRET_KEY, algorithm="HS256"
         )
         return encoded_token
 
@@ -74,12 +74,12 @@ async def get_current_user_ws(
     websocket: WebSocket,
     credential: Credential = set_credential_manager,
 ) -> ODMUser | None:
-    if os.getenv("TEST_MODE") == "true":
+    if settings.TEST_MODE == "true":
         if session_token == TEST_USER_ACCESS_TOKEN:
             return await get_or_create_test_user()
     try:
         payload = jwt.decode(
-            session_token, os.environ["JWT_SECRET_KEY"], algorithms=["HS256"]
+            session_token, settings.JWT_SECRET_KEY, algorithms=["HS256"]
         )
         user_document_id: str | None = payload.get("sub")
         if user_document_id is None:
@@ -112,12 +112,12 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    if os.getenv("TEST_MODE") == "true":
+    if settings.TEST_MODE == "true":
         if session_token == TEST_USER_ACCESS_TOKEN:
             return await get_or_create_test_user()
     try:
         payload = jwt.decode(
-            session_token, os.environ["JWT_SECRET_KEY"], algorithms=["HS256"]
+            session_token, settings.JWT_SECRET_KEY, algorithms=["HS256"]
         )
         user_document_id: str | None = payload.get("sub")
         if user_document_id is None:

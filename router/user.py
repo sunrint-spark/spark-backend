@@ -1,4 +1,4 @@
-import os
+from utils.env_validator import settings
 from datetime import datetime, timedelta
 
 import aiogoogle.excs
@@ -18,11 +18,12 @@ from service.usersession import UserSession as Session
 router = APIRouter(prefix="/user", tags=["user"])
 
 GOOGLE_CLIENT_CREDS = aiogoogle_auth.creds.ClientCreds(
-    client_id=os.getenv("GOOGLE_CLIENT_ID"),
-    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    client_id=settings.GOOGLE_CLIENT_ID,
+    client_secret=settings.GOOGLE_CLIENT_SECRET,
     scopes=["profile", "email"],
-    redirect_uri=os.getenv("GOOGLE_REDIRECT_URI"),
+    redirect_uri=settings.GOOGLE_REDIRECT_URI,
 )
+import os
 GOOGLE_STATE = os.urandom(10).hex()
 print(GOOGLE_STATE)
 

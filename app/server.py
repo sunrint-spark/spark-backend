@@ -1,4 +1,4 @@
-import os
+from utils.env_validator import settings
 import logging
 from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -15,9 +15,9 @@ logger = Logger.create(__name__, level=logging.DEBUG)
 
 @asynccontextmanager
 async def lifespan(_server: FastAPI):
-    motor_client = AsyncIOMotorClient(os.getenv("MONGODB_URI"))
+    motor_client = AsyncIOMotorClient(settings.MONGODB_URI)
     await init_beanie(
-        database=motor_client[os.getenv("MONGODB_DATABASE")],
+        database=motor_client[settings.MONGODB_DATABASE],
         document_models=[
             "entity.user.User",
         ],

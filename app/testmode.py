@@ -1,11 +1,12 @@
-import os
+from utils.env_validator import settings
 import logging
 from utils.log import Logger
 from entity.user import User as ODMUser
 
 logger = Logger.create(__name__, level=logging.DEBUG)
 
-if os.getenv("TEST_MODE") == "true":
+import os
+if settings.TEST_MODE == "true":
     logger.info("Test Mode On")
     TEST_USER_ACCESS_TOKEN = (
         "eySPARKTESTAAAAAA" + os.urandom(6).hex() + "BK00000000007218"
