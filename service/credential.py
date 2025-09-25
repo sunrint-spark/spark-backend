@@ -4,6 +4,7 @@ import jwt
 from passlib.context import CryptContext
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, timezone
+from dotenv import load_dotenv
 
 from fastapi import HTTPException, status, Security, Depends, WebSocket
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -12,6 +13,8 @@ if os.getenv("TEST_MODE") == "true":
     from app.testmode import get_or_create_test_user, TEST_USER_ACCESS_TOKEN
 from app.redisconn import RedisConn
 from entity.user import User as ODMUser
+
+load_dotenv()
 
 security = HTTPBearer(
     scheme_name="access_token",
